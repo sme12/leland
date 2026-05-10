@@ -2,7 +2,7 @@ import { createInstance } from 'i18next';
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import { configureI18n, languageStorageKey } from './index';
-import { defaultLanguage, resources } from './resources';
+import { defaultLanguage, normalizeLanguage, resources } from './resources';
 
 function collectKeys(value: unknown, prefix = ''): Array<string> {
   if (!value || typeof value !== 'object') {
@@ -56,5 +56,12 @@ describe('i18n', () => {
     const russianKeys = collectKeys(resources.ru.translation).sort();
 
     expect(russianKeys).toEqual(englishKeys);
+  });
+
+  it('normalizes supported language variants', () => {
+    expect(normalizeLanguage('RU')).toBe('ru');
+    expect(normalizeLanguage('ru_RU')).toBe('ru');
+    expect(normalizeLanguage('en-US')).toBe('en');
+    expect(normalizeLanguage('fr_FR')).toBe(defaultLanguage);
   });
 });

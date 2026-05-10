@@ -70,7 +70,7 @@ export function normalizeLanguage(
     return defaultLanguage;
   }
 
-  const baseLanguage = value.split('-')[0];
+  const normalizedBase = value.toLowerCase().replaceAll('_', '-').split('-')[0];
 
-  return isSupportedLanguage(baseLanguage) ? baseLanguage : defaultLanguage;
+  return isSupportedLanguage(normalizedBase) ? normalizedBase : defaultLanguage;
 }

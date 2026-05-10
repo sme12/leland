@@ -13,10 +13,10 @@ const config = defineConfig({
   resolve: { tsconfigPaths: true },
   plugins: [
     devtools(),
-    nitro({ preset: 'vercel' }),
-    tailwindcss(),
     tanstackStart(),
     viteReact(),
+    nitro({ preset: 'vercel' }),
+    tailwindcss(),
   ],
   test: {
     environment: 'jsdom',

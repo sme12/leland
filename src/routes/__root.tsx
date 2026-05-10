@@ -6,6 +6,7 @@ import { I18nextProvider } from 'react-i18next';
 
 import { AppNav } from '#/components/app-nav';
 import { appI18n } from '#/i18n';
+import { normalizeLanguage } from '#/i18n/resources';
 import appCss from '../styles.css?url';
 
 export const Route = createRootRoute({
@@ -37,8 +38,12 @@ export const Route = createRootRoute({
 });
 
 function RootDocument({ children }: { children: React.ReactNode }) {
+  const language = normalizeLanguage(
+    appI18n.resolvedLanguage ?? appI18n.language,
+  );
+
   return (
-    <html lang="en">
+    <html lang={language}>
       <head>
         <HeadContent />
       </head>
