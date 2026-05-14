@@ -12,8 +12,14 @@
   "scripts": {
     "dev": "vite dev --port 3000",
     "build": "vite build",
-    "vercel-build": "vite build",
+    "vercel-build": "prisma generate && prisma migrate deploy && vite build",
     "preview": "vite preview",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate dev",
+    "prisma:deploy": "prisma migrate deploy",
+    "prisma:seed": "prisma db seed",
+    "e2e": "playwright test",
+    "e2e:smoke": "playwright test --grep @smoke",
     "typecheck": "tsc --noEmit",
     "test": "vitest run --config vitest.config.ts",
     "lint": "eslint .",
@@ -23,23 +29,32 @@
   "dependencies": {
     "@base-ui/react": "1.4.1",
     "@clerk/tanstack-react-start": "1.2.3",
+    "@neondatabase/serverless": "^1.1.0",
+    "@prisma/adapter-neon": "^7.8.0",
+    "@prisma/client": "^7.8.0",
     "@tailwindcss/vite": "^4.1.18",
     "@tanstack/react-devtools": "0.10.2",
+    "@tanstack/react-query": "^5.100.10",
     "@tanstack/react-router": "1.169.2",
     "@tanstack/react-router-devtools": "1.166.13",
     "@tanstack/react-router-ssr-query": "1.166.12",
     "@tanstack/react-start": "1.167.65",
     "@tanstack/router-plugin": "1.167.35",
+    "decimal.js": "^10.6.0",
     "i18next": "^26.0.10",
     "i18next-browser-languagedetector": "^8.2.1",
     "lucide-react": "^0.545.0",
     "nitro": "npm:nitro-nightly@3.0.1-20260508-123613-d2e64906",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
+    "react-hook-form": "^7.75.0",
     "react-i18next": "^17.0.7",
-    "tailwindcss": "^4.1.18"
+    "tailwindcss": "^4.1.18",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@clerk/testing": "^2.0.27",
+    "@playwright/test": "^1.60.0",
     "@tailwindcss/typography": "^0.5.16",
     "@tanstack/devtools-vite": "0.6.0",
     "@tanstack/eslint-config": "0.4.0",
@@ -52,14 +67,18 @@
     "eslint": "^10.3.0",
     "jsdom": "^28.1.0",
     "prettier": "^3.8.1",
+    "prisma": "^7.8.0",
+    "tsx": "^4.21.0",
     "typescript": "^6.0.2",
     "vite": "^8.0.0",
     "vitest": "^4.1.5"
   },
   "pnpm": {
     "onlyBuiltDependencies": [
+      "@prisma/engines",
       "esbuild",
-      "lightningcss"
+      "lightningcss",
+      "prisma"
     ]
   }
 }

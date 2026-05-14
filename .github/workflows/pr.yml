@@ -27,6 +27,9 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Generate Prisma client
+        run: pnpm prisma:generate
+
       - name: Typecheck
         run: pnpm typecheck
 
@@ -35,3 +38,48 @@ jobs:
 
       - name: Unit tests
         run: pnpm test
+
+      - name: Check required E2E secrets on main
+        if: github.event_name == 'push'
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
+          CLERK_PUBLISHABLE_KEY: ${{ secrets.CLERK_PUBLISHABLE_KEY }}
+          CLERK_E2E_USER_A_EMAIL: ${{ secrets.CLERK_E2E_USER_A_EMAIL }}
+          CLERK_E2E_USER_B_EMAIL: ${{ secrets.CLERK_E2E_USER_B_EMAIL }}
+        run: |
+          test -n "$DATABASE_URL"
+          test -n "$CLERK_SECRET_KEY"
+          test -n "$CLERK_PUBLISHABLE_KEY"
+          test -n "$CLERK_E2E_USER_A_EMAIL"
+          test -n "$CLERK_E2E_USER_B_EMAIL"
+
+      - name: Playwright smoke
+        if: github.event_name == 'pull_request'
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
+          CLERK_PUBLISHABLE_KEY: ${{ secrets.CLERK_PUBLISHABLE_KEY }}
+          CLERK_E2E_USER_A_EMAIL: ${{ secrets.CLERK_E2E_USER_A_EMAIL }}
+          CLERK_E2E_USER_B_EMAIL: ${{ secrets.CLERK_E2E_USER_B_EMAIL }}
+          E2E_TEST_MODE: 'true'
+        run: |
+          if [ -n "$DATABASE_URL" ] && [ -n "$CLERK_SECRET_KEY" ] && [ -n "$CLERK_PUBLISHABLE_KEY" ] && [ -n "$CLERK_E2E_USER_A_EMAIL" ] && [ -n "$CLERK_E2E_USER_B_EMAIL" ]; then
+            pnpm prisma:deploy
+            pnpm e2e:smoke
+          else
+            echo "Skipping Playwright smoke; required secrets are not available."
+          fi
+
+      - name: Playwright full suite
+        if: github.event_name == 'push'
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
+          CLERK_PUBLISHABLE_KEY: ${{ secrets.CLERK_PUBLISHABLE_KEY }}
+          CLERK_E2E_USER_A_EMAIL: ${{ secrets.CLERK_E2E_USER_A_EMAIL }}
+          CLERK_E2E_USER_B_EMAIL: ${{ secrets.CLERK_E2E_USER_B_EMAIL }}
+          E2E_TEST_MODE: 'true'
+        run: |
+          pnpm prisma:deploy
+          pnpm e2e
