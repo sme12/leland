@@ -63,7 +63,7 @@ export function MaterialsList() {
       setArchivedFn({ data: input }),
     onSuccess: async () => {
       await queryClient.invalidateQueries({
-        queryKey: materialKeys.all(userKey),
+        queryKey: materialKeys.root,
       });
     },
   });
