@@ -15,9 +15,16 @@ export const prisma = new PrismaClient({ adapter });
 
 type DbClient = PrismaClient | Prisma.TransactionClient;
 type CustomerWhere = Prisma.CustomerWhereInput;
+type MaterialWhere = Prisma.MaterialWhereInput;
 type ServiceWhere = Prisma.ServiceWhereInput;
 
 function scopedCustomerWhere(userId: string, where?: CustomerWhere) {
+  return {
+    AND: [{ userId }, where ?? {}],
+  };
+}
+
+function scopedMaterialWhere(userId: string, where?: MaterialWhere) {
   return {
     AND: [{ userId }, where ?? {}],
   };
@@ -89,6 +96,37 @@ export function getScopedDb(userId: string, client: DbClient = prisma) {
         client.customer.deleteMany({
           ...args,
           where: scopedCustomerWhere(userId, args.where),
+        }),
+    },
+    material: {
+      findMany: (args: Prisma.MaterialFindManyArgs = {}) =>
+        client.material.findMany({
+          ...args,
+          where: scopedMaterialWhere(userId, args.where),
+        }),
+      findFirst: (args: Prisma.MaterialFindFirstArgs = {}) =>
+        client.material.findFirst({
+          ...args,
+          where: scopedMaterialWhere(userId, args.where),
+        }),
+      create: (
+        args: Omit<Prisma.MaterialCreateArgs, 'data'> & {
+          data: Omit<Prisma.MaterialCreateInput, 'userId'>;
+        },
+      ) =>
+        client.material.create({
+          ...args,
+          data: { ...args.data, userId },
+        }),
+      updateMany: (args: Prisma.MaterialUpdateManyArgs) =>
+        client.material.updateMany({
+          ...args,
+          where: scopedMaterialWhere(userId, args.where),
+        }),
+      deleteMany: (args: Prisma.MaterialDeleteManyArgs = {}) =>
+        client.material.deleteMany({
+          ...args,
+          where: scopedMaterialWhere(userId, args.where),
         }),
     },
     service: {

@@ -1,6 +1,6 @@
 import { Show, SignInButton, UserButton } from '@clerk/tanstack-react-start';
 import { Link } from '@tanstack/react-router';
-import { LogIn, LogOut, Scissors, Users } from 'lucide-react';
+import { LogIn, LogOut, Package, Scissors, Users } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 import { LanguageSwitcher } from './language-switcher';
@@ -27,6 +27,15 @@ export function AppNav() {
               className="inline-flex size-10 items-center justify-center rounded-md border border-border bg-surface text-foreground shadow-sm outline-none transition hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring"
             >
               <Users aria-hidden="true" className="size-4" />
+            </Link>
+            <Link
+              to="/materials"
+              aria-label={t('nav.materials')}
+              title={t('nav.materials')}
+              activeProps={{ className: 'bg-muted' }}
+              className="inline-flex size-10 items-center justify-center rounded-md border border-border bg-surface text-foreground shadow-sm outline-none transition hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              <Package aria-hidden="true" className="size-4" />
             </Link>
             <Link
               to="/catalog/services"
