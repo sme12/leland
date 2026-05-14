@@ -1,6 +1,7 @@
 import { PrismaNeon } from '@prisma/adapter-neon';
 
 import { PrismaClient } from '../src/generated/prisma/client';
+import { MATERIAL_SEED } from '../src/shared/materialSeed';
 import { SERVICE_SEED } from '../src/shared/serviceSeed';
 
 const userIds = (process.env.SEED_USER_IDS ?? '')
@@ -65,6 +66,16 @@ async function main() {
           },
         });
       }
+
+      await prisma.material.createMany({
+        data: MATERIAL_SEED.map((material) => ({
+          userId,
+          name: material.name,
+          category: material.category,
+          unitOfMeasure: material.unitOfMeasure,
+        })),
+        skipDuplicates: true,
+      });
     }
   } finally {
     await prisma.$disconnect();

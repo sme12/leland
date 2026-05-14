@@ -7,6 +7,25 @@ datasource db {
   provider = "postgresql"
 }
 
+enum MaterialCategory {
+  color
+  developer
+  bleach
+  shampoo
+  conditioner
+  treatment
+  styling
+  tools
+  disposables
+  other
+}
+
+enum UnitOfMeasure {
+  ml
+  g
+  piece
+}
+
 model Customer {
   id         String   @id @default(cuid())
   userId     String   @map("user_id")
@@ -18,6 +37,21 @@ model Customer {
 
   @@index([userId, isArchived, name])
   @@map("customers")
+}
+
+model Material {
+  id            String           @id @default(cuid())
+  userId        String           @map("user_id")
+  name          String
+  unitOfMeasure UnitOfMeasure    @map("unit_of_measure")
+  category      MaterialCategory
+  isArchived    Boolean          @default(false) @map("is_archived")
+  createdAt     DateTime         @default(now()) @map("created_at")
+  updatedAt     DateTime         @updatedAt @map("updated_at")
+
+  @@unique([userId, name, category, unitOfMeasure])
+  @@index([userId, isArchived, category, name])
+  @@map("materials")
 }
 
 model Service {

@@ -8,6 +8,12 @@ async function waitForCustomersListLoaded(page: Page) {
     .waitFor({ state: 'attached', timeout: 10_000 });
 }
 
+async function waitForMaterialsListLoaded(page: Page) {
+  await page
+    .locator('section[data-materials-list][data-loaded="true"]')
+    .waitFor({ state: 'attached', timeout: 10_000 });
+}
+
 async function collectCustomerIds(
   page: Page,
   prefix: string,
@@ -16,8 +22,29 @@ async function collectCustomerIds(
   return page.locator('li[data-customer-id]').evaluateAll(
     (items, namePrefix) =>
       items
-        .filter((li) => li.textContent.includes(namePrefix))
+        .filter(
+          (li) =>
+            Boolean(li.textContent) && li.textContent.includes(namePrefix),
+        )
         .map((li) => li.getAttribute('data-customer-id'))
+        .filter((id): id is string => Boolean(id)),
+    prefix,
+  );
+}
+
+async function collectMaterialIds(
+  page: Page,
+  prefix: string,
+): Promise<string[]> {
+  await waitForMaterialsListLoaded(page);
+  return page.locator('li[data-material-id]').evaluateAll(
+    (items, namePrefix) =>
+      items
+        .filter(
+          (li) =>
+            Boolean(li.textContent) && li.textContent.includes(namePrefix),
+        )
+        .map((li) => li.getAttribute('data-material-id'))
         .filter((id): id is string => Boolean(id)),
     prefix,
   );
@@ -62,5 +89,46 @@ export async function cleanupCustomersByPrefix(page: Page, prefix: string) {
   } catch (error) {
     // Best-effort cleanup; don't mask the original test failure.
     console.warn('[cleanup] cleanupCustomersByPrefix failed:', error);
+  }
+}
+
+export async function cleanupMaterialsByPrefix(page: Page, prefix: string) {
+  try {
+    const ids = new Set<string>();
+
+    await page.goto('/materials');
+    for (const id of await collectMaterialIds(page, prefix)) ids.add(id);
+
+    await page
+      .getByRole('button', { name: /archived/i })
+      .click()
+      .catch(() => undefined);
+    for (const id of await collectMaterialIds(page, prefix)) ids.add(id);
+
+    console.log(
+      `[cleanup] found ${ids.size} material(s) matching "${prefix}" to delete`,
+    );
+
+    const results = await Promise.all(
+      Array.from(ids).map(async (id) => {
+        try {
+          const res = await page.request.delete(`/api/test/materials/${id}`);
+          return { id, status: res.status(), ok: res.ok() };
+        } catch (error) {
+          return { id, status: 0, ok: false, error };
+        }
+      }),
+    );
+
+    const failed = results.filter((r) => !r.ok);
+    if (failed.length > 0) {
+      console.warn(
+        '[cleanup] DELETE /api/test/materials failed for some rows:',
+        failed,
+        '— If you see 404s, the dev server is missing E2E_TEST_MODE=true (restart it after creating .env.test).',
+      );
+    }
+  } catch (error) {
+    console.warn('[cleanup] cleanupMaterialsByPrefix failed:', error);
   }
 }

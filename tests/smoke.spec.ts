@@ -1,9 +1,13 @@
 import { expect, test } from '@playwright/test';
 
 import { e2eEnvReady, signInAs } from './helpers/auth';
-import { cleanupCustomersByPrefix } from './helpers/cleanup';
+import {
+  cleanupCustomersByPrefix,
+  cleanupMaterialsByPrefix,
+} from './helpers/cleanup';
 
 const TEST_CUSTOMER_PREFIX = 'SMOKE ';
+const TEST_MATERIAL_PREFIX = 'SMOKE MAT ';
 
 test.skip(
   !e2eEnvReady,
@@ -22,6 +26,7 @@ test.afterAll(async ({ browser }) => {
   try {
     await signInAs(page, 'A');
     await cleanupCustomersByPrefix(page, TEST_CUSTOMER_PREFIX);
+    await cleanupMaterialsByPrefix(page, TEST_MATERIAL_PREFIX);
   } catch (error) {
     console.warn('[smoke.spec] afterAll cleanup failed:', error);
   } finally {
@@ -29,7 +34,9 @@ test.afterAll(async ({ browser }) => {
   }
 });
 
-test('customer CRUD uses active and archived views', async ({ page }) => {
+test('@smoke customer CRUD uses active and archived views', async ({
+  page,
+}) => {
   await signInAs(page, 'A');
   const suffix = Date.now();
   const name = `${TEST_CUSTOMER_PREFIX}Anna ${suffix}`;
@@ -65,7 +72,7 @@ test('customer CRUD uses active and archived views', async ({ page }) => {
   await expect(page.getByText(renamed)).toBeHidden();
 });
 
-test('service prices persist nulls and values', async ({ page }) => {
+test('@smoke service prices persist nulls and values', async ({ page }) => {
   await signInAs(page, 'A');
   await page.getByRole('link', { name: /service prices/i }).click();
 
@@ -73,13 +80,62 @@ test('service prices persist nulls and values', async ({ page }) => {
   await expect(other).toHaveAttribute('placeholder', /set price/i);
   await other.fill('123.45');
   await other.blur();
+  await expect(page.getByText(/price saved/i)).toBeVisible();
   await page.reload();
   await expect(page.getByLabel(/other/i)).toHaveValue('123.45');
 
   await page.getByLabel(/other/i).fill('');
   await page.getByLabel(/other/i).blur();
+  await expect(page.getByText(/price saved/i)).toBeVisible();
   await page.reload();
   await expect(page.getByLabel(/other/i)).toHaveValue('');
+});
+
+test('@smoke material CRUD uses grouped active and archived views', async ({
+  page,
+}) => {
+  await signInAs(page, 'A');
+  const suffix = Date.now();
+  const name = `${TEST_MATERIAL_PREFIX}Color ${suffix}`;
+  const renamed = `${TEST_MATERIAL_PREFIX}Brush ${suffix}`;
+
+  await page.getByRole('link', { name: /materials/i }).click();
+  await page.getByRole('link', { name: /add material/i }).click();
+  await page.getByLabel(/name/i).fill(name);
+  await page.getByLabel(/category/i).selectOption('color');
+  await page.getByLabel(/unit/i).selectOption('ml');
+  await page.getByRole('button', { name: /create material/i }).click();
+
+  await expect(
+    page.locator('section[data-material-category="color"]'),
+  ).toContainText(name);
+
+  await page
+    .getByRole('link', { name: new RegExp(`edit ${name}`, 'i') })
+    .click();
+  await expect(page.getByLabel(/unit/i)).toHaveCount(0);
+  await page.getByLabel(/name/i).fill(renamed);
+  await page.getByLabel(/category/i).selectOption('tools');
+  await page.getByRole('button', { name: /save material/i }).click();
+
+  await expect(
+    page.locator('section[data-material-category="tools"]'),
+  ).toContainText(renamed);
+
+  page.once('dialog', (dialog) => dialog.accept());
+  await page
+    .getByRole('button', { name: new RegExp(`archive ${renamed}`, 'i') })
+    .click();
+  await expect(page.getByText(renamed)).toBeHidden();
+
+  await page.getByRole('button', { name: /archived/i }).click();
+  await expect(page.getByText(renamed)).toBeVisible();
+
+  page.once('dialog', (dialog) => dialog.accept());
+  await page
+    .getByRole('button', { name: new RegExp(`restore ${renamed}`, 'i') })
+    .click();
+  await expect(page.getByText(renamed)).toBeHidden();
 });
 
 test('customers and service prices are isolated by Clerk user', async ({
@@ -87,6 +143,7 @@ test('customers and service prices are isolated by Clerk user', async ({
 }) => {
   const suffix = Date.now();
   const isolatedName = `${TEST_CUSTOMER_PREFIX}Isolation ${suffix}`;
+  const isolatedMaterial = `${TEST_MATERIAL_PREFIX}Isolation ${suffix}`;
   const isolatedPrice = `${200 + (suffix % 700)}.${String(suffix % 100).padStart(2, '0')}`;
 
   await signInAs(page, 'A');
@@ -94,6 +151,14 @@ test('customers and service prices are isolated by Clerk user', async ({
   await page.getByLabel(/name/i).fill(isolatedName);
   await page.getByRole('button', { name: /create customer/i }).click();
   await expect(page.getByText(isolatedName)).toBeVisible();
+
+  await page.getByRole('link', { name: /materials/i }).click();
+  await page.getByRole('link', { name: /add material/i }).click();
+  await page.getByLabel(/name/i).fill(isolatedMaterial);
+  await page.getByLabel(/category/i).selectOption('other');
+  await page.getByLabel(/unit/i).selectOption('piece');
+  await page.getByRole('button', { name: /create material/i }).click();
+  await expect(page.getByText(isolatedMaterial)).toBeVisible();
 
   await page.getByRole('link', { name: /service prices/i }).click();
   const cutPrice = page.getByRole('textbox', { name: 'Cut', exact: true });
@@ -103,6 +168,8 @@ test('customers and service prices are isolated by Clerk user', async ({
 
   await signInAs(page, 'B');
   await expect(page.getByText(isolatedName)).toBeHidden();
+  await page.getByRole('link', { name: /materials/i }).click();
+  await expect(page.getByText(isolatedMaterial)).toHaveCount(0);
   await page.getByRole('link', { name: /service prices/i }).click();
   await expect(
     page.getByRole('textbox', { name: 'Cut', exact: true }),

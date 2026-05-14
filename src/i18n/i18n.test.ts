@@ -58,6 +58,20 @@ describe('i18n', () => {
     expect(russianKeys).toEqual(englishKeys);
   });
 
+  it('renders Russian material-count plural forms', async () => {
+    const instance = configureI18n(createInstance(), {
+      useLanguageDetector: false,
+    });
+
+    await instance.changeLanguage('ru');
+
+    expect(instance.t('material.groupCount', { count: 1 })).toBe('1 материал');
+    expect(instance.t('material.groupCount', { count: 2 })).toBe('2 материала');
+    expect(instance.t('material.groupCount', { count: 5 })).toBe(
+      '5 материалов',
+    );
+  });
+
   it('normalizes supported language variants', () => {
     expect(normalizeLanguage('RU')).toBe('ru');
     expect(normalizeLanguage('ru_RU')).toBe('ru');
