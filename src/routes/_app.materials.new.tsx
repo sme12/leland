@@ -1,4 +1,3 @@
-import { useUser } from '@clerk/tanstack-react-start';
 import { Toast } from '@base-ui/react/toast';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link, createFileRoute, useNavigate } from '@tanstack/react-router';
@@ -17,8 +16,6 @@ export const Route = createFileRoute('/_app/materials/new')({
 
 function NewMaterialRoute() {
   const { t } = useTranslation();
-  const { user } = useUser();
-  const userKey = user?.id ?? 'pending';
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const toast = Toast.useToastManager();
@@ -28,7 +25,7 @@ function NewMaterialRoute() {
       createMaterialFn({ data: values }),
     onSuccess: async () => {
       await queryClient.invalidateQueries({
-        queryKey: materialKeys.all(userKey),
+        queryKey: materialKeys.root,
       });
       await navigate({ to: '/materials' });
     },

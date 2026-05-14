@@ -48,6 +48,7 @@ model Material {
   isArchived    Boolean          @default(false) @map("is_archived")
   createdAt     DateTime         @default(now()) @map("created_at")
   updatedAt     DateTime         @updatedAt @map("updated_at")
+  purchases     Purchase[]
 
   @@unique([userId, name, category, unitOfMeasure])
   @@index([userId, isArchived, category, name])
@@ -68,4 +69,21 @@ model Service {
   @@unique([userId, displayOrder])
   @@index([userId, isArchived, displayOrder])
   @@map("services")
+}
+
+model Purchase {
+  id            String   @id @default(cuid())
+  userId        String   @map("user_id")
+  materialId    String   @map("material_id")
+  totalQuantity Decimal  @map("total_quantity") @db.Decimal(10, 2)
+  totalPrice    Decimal  @map("total_price") @db.Decimal(10, 2)
+  date          DateTime @db.Date
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  material Material @relation(fields: [materialId], references: [id], onDelete: Restrict)
+
+  @@index([userId, date, createdAt])
+  @@index([userId, materialId, date])
+  @@map("purchases")
 }

@@ -36,7 +36,7 @@ function EditMaterialRoute() {
       updateMaterialFn({ data: { ...values, id: materialId } }),
     onSuccess: async () => {
       await queryClient.invalidateQueries({
-        queryKey: materialKeys.all(userKey),
+        queryKey: materialKeys.root,
       });
       await navigate({ to: '/materials' });
     },

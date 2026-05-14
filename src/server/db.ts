@@ -16,6 +16,7 @@ export const prisma = new PrismaClient({ adapter });
 type DbClient = PrismaClient | Prisma.TransactionClient;
 type CustomerWhere = Prisma.CustomerWhereInput;
 type MaterialWhere = Prisma.MaterialWhereInput;
+type PurchaseWhere = Prisma.PurchaseWhereInput;
 type ServiceWhere = Prisma.ServiceWhereInput;
 
 function scopedCustomerWhere(userId: string, where?: CustomerWhere) {
@@ -25,6 +26,12 @@ function scopedCustomerWhere(userId: string, where?: CustomerWhere) {
 }
 
 function scopedMaterialWhere(userId: string, where?: MaterialWhere) {
+  return {
+    AND: [{ userId }, where ?? {}],
+  };
+}
+
+function scopedPurchaseWhere(userId: string, where?: PurchaseWhere) {
   return {
     AND: [{ userId }, where ?? {}],
   };
@@ -127,6 +134,37 @@ export function getScopedDb(userId: string, client: DbClient = prisma) {
         client.material.deleteMany({
           ...args,
           where: scopedMaterialWhere(userId, args.where),
+        }),
+    },
+    purchase: {
+      findMany: (args: Prisma.PurchaseFindManyArgs = {}) =>
+        client.purchase.findMany({
+          ...args,
+          where: scopedPurchaseWhere(userId, args.where),
+        }),
+      findFirst: (args: Prisma.PurchaseFindFirstArgs = {}) =>
+        client.purchase.findFirst({
+          ...args,
+          where: scopedPurchaseWhere(userId, args.where),
+        }),
+      create: (
+        args: Omit<Prisma.PurchaseCreateArgs, 'data'> & {
+          data: Omit<Prisma.PurchaseUncheckedCreateInput, 'userId'>;
+        },
+      ) =>
+        client.purchase.create({
+          ...args,
+          data: { ...args.data, userId },
+        }),
+      updateMany: (args: Prisma.PurchaseUpdateManyArgs) =>
+        client.purchase.updateMany({
+          ...args,
+          where: scopedPurchaseWhere(userId, args.where),
+        }),
+      deleteMany: (args: Prisma.PurchaseDeleteManyArgs = {}) =>
+        client.purchase.deleteMany({
+          ...args,
+          where: scopedPurchaseWhere(userId, args.where),
         }),
     },
     service: {

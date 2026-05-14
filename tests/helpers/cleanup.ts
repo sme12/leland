@@ -14,6 +14,12 @@ async function waitForMaterialsListLoaded(page: Page) {
     .waitFor({ state: 'attached', timeout: 10_000 });
 }
 
+async function waitForPurchasesListLoaded(page: Page) {
+  await page
+    .locator('section[data-purchases-list][data-loaded="true"]')
+    .waitFor({ state: 'attached', timeout: 10_000 });
+}
+
 async function collectCustomerIds(
   page: Page,
   prefix: string,
@@ -45,6 +51,24 @@ async function collectMaterialIds(
             Boolean(li.textContent) && li.textContent.includes(namePrefix),
         )
         .map((li) => li.getAttribute('data-material-id'))
+        .filter((id): id is string => Boolean(id)),
+    prefix,
+  );
+}
+
+async function collectPurchaseIds(
+  page: Page,
+  prefix: string,
+): Promise<string[]> {
+  await waitForPurchasesListLoaded(page);
+  return page.locator('li[data-purchase-id]').evaluateAll(
+    (items, namePrefix) =>
+      items
+        .filter(
+          (li) =>
+            Boolean(li.textContent) && li.textContent.includes(namePrefix),
+        )
+        .map((li) => li.getAttribute('data-purchase-id'))
         .filter((id): id is string => Boolean(id)),
     prefix,
   );
@@ -130,5 +154,40 @@ export async function cleanupMaterialsByPrefix(page: Page, prefix: string) {
     }
   } catch (error) {
     console.warn('[cleanup] cleanupMaterialsByPrefix failed:', error);
+  }
+}
+
+export async function cleanupPurchasesByPrefix(page: Page, prefix: string) {
+  try {
+    const ids = new Set<string>();
+
+    await page.goto('/purchases');
+    for (const id of await collectPurchaseIds(page, prefix)) ids.add(id);
+
+    console.log(
+      `[cleanup] found ${ids.size} purchase(s) matching "${prefix}" to delete`,
+    );
+
+    const results = await Promise.all(
+      Array.from(ids).map(async (id) => {
+        try {
+          const res = await page.request.delete(`/api/test/purchases/${id}`);
+          return { id, status: res.status(), ok: res.ok() };
+        } catch (error) {
+          return { id, status: 0, ok: false, error };
+        }
+      }),
+    );
+
+    const failed = results.filter((r) => !r.ok);
+    if (failed.length > 0) {
+      console.warn(
+        '[cleanup] DELETE /api/test/purchases failed for some rows:',
+        failed,
+        '— If you see 404s, the dev server is missing E2E_TEST_MODE=true (restart it after creating .env.test).',
+      );
+    }
+  } catch (error) {
+    console.warn('[cleanup] cleanupPurchasesByPrefix failed:', error);
   }
 }

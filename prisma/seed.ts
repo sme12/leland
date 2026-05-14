@@ -15,6 +15,37 @@ const seedCustomers = [
   { name: 'Elena Petrova', comment: 'Prefers evening visits' },
 ];
 
+const seedPurchases = [
+  {
+    materialName: 'Color cream',
+    totalQuantity: '500',
+    totalPrice: '58',
+    date: '2026-05-01',
+  },
+  {
+    materialName: 'Cream developer',
+    totalQuantity: '1000',
+    totalPrice: '24',
+    date: '2026-05-02',
+  },
+  {
+    materialName: 'Lightening powder',
+    totalQuantity: '450',
+    totalPrice: '32',
+    date: '2026-05-03',
+  },
+  {
+    materialName: 'Tint brush',
+    totalQuantity: '3',
+    totalPrice: '12',
+    date: '2026-05-04',
+  },
+];
+
+function parseSeedDate(value: string) {
+  return new Date(`${value}T00:00:00.000Z`);
+}
+
 async function main() {
   if (userIds.length === 0) {
     console.log('SEED_USER_IDS is not set; no Leland seed data inserted.');
@@ -76,6 +107,48 @@ async function main() {
         })),
         skipDuplicates: true,
       });
+
+      const materials = await prisma.material.findMany({
+        where: {
+          userId,
+          name: { in: seedPurchases.map((purchase) => purchase.materialName) },
+        },
+        select: { id: true, name: true },
+      });
+
+      for (const purchase of seedPurchases) {
+        const material = materials.find(
+          (item) => item.name === purchase.materialName,
+        );
+
+        if (!material) {
+          continue;
+        }
+
+        const date = parseSeedDate(purchase.date);
+        const existing = await prisma.purchase.findFirst({
+          where: {
+            userId,
+            materialId: material.id,
+            date,
+            totalQuantity: purchase.totalQuantity,
+            totalPrice: purchase.totalPrice,
+          },
+          select: { id: true },
+        });
+
+        if (!existing) {
+          await prisma.purchase.create({
+            data: {
+              userId,
+              materialId: material.id,
+              totalQuantity: purchase.totalQuantity,
+              totalPrice: purchase.totalPrice,
+              date,
+            },
+          });
+        }
+      }
     }
   } finally {
     await prisma.$disconnect();
