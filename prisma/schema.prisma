@@ -1,0 +1,37 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Customer {
+  id         String   @id @default(cuid())
+  userId     String   @map("user_id")
+  name       String
+  comment    String?
+  isArchived Boolean  @default(false) @map("is_archived")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  @@index([userId, isArchived, name])
+  @@map("customers")
+}
+
+model Service {
+  id           String   @id @default(cuid())
+  userId       String   @map("user_id")
+  name         String
+  defaultPrice Decimal? @map("default_price") @db.Decimal(10, 2)
+  displayOrder Int      @map("display_order")
+  isArchived   Boolean  @default(false) @map("is_archived")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@unique([userId, name])
+  @@unique([userId, displayOrder])
+  @@index([userId, isArchived, displayOrder])
+  @@map("services")
+}

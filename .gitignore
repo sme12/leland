@@ -6,6 +6,7 @@ dist-ssr
 .env
 .env.*
 !.env.example
+!.env.test.example
 .nitro
 .tanstack
 .wrangler
@@ -14,7 +15,10 @@ dist-ssr
 __unconfig*
 todos.json
 .vercel
+.vite
 coverage
+test-results
+src/generated/prisma
 
 # clerk configuration (can include secrets)
 /.clerk/

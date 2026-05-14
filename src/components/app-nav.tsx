@@ -1,6 +1,6 @@
 import { Show, SignInButton, UserButton } from '@clerk/tanstack-react-start';
 import { Link } from '@tanstack/react-router';
-import { LogIn, LogOut } from 'lucide-react';
+import { LogIn, LogOut, Scissors, Users } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 import { LanguageSwitcher } from './language-switcher';
@@ -18,6 +18,26 @@ export function AppNav() {
           {t('app.name')}
         </Link>
         <nav aria-label={t('app.name')} className="flex items-center gap-2">
+          <Show when="signed-in">
+            <Link
+              to="/customers"
+              aria-label={t('nav.customers')}
+              title={t('nav.customers')}
+              activeProps={{ className: 'bg-muted' }}
+              className="inline-flex size-10 items-center justify-center rounded-md border border-border bg-surface text-foreground shadow-sm outline-none transition hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              <Users aria-hidden="true" className="size-4" />
+            </Link>
+            <Link
+              to="/catalog/services"
+              aria-label={t('nav.servicePrices')}
+              title={t('nav.servicePrices')}
+              activeProps={{ className: 'bg-muted' }}
+              className="inline-flex size-10 items-center justify-center rounded-md border border-border bg-surface text-foreground shadow-sm outline-none transition hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              <Scissors aria-hidden="true" className="size-4" />
+            </Link>
+          </Show>
           <LanguageSwitcher />
           <Show when="signed-in">
             <UserButton />

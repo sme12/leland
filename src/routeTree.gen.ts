@@ -11,8 +11,15 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SignOutRouteImport } from './routes/sign-out'
 import { Route as SignInRouteImport } from './routes/sign-in'
-import { Route as IndexRouteImport } from './routes/index'
+import { Route as AppRouteImport } from './routes/_app'
+import { Route as AppIndexRouteImport } from './routes/_app.index'
 import { Route as SignInSplatRouteImport } from './routes/sign-in.$'
+import { Route as AppCustomersRouteImport } from './routes/_app.customers'
+import { Route as AppCustomersIndexRouteImport } from './routes/_app.customers.index'
+import { Route as AppCustomersNewRouteImport } from './routes/_app.customers.new'
+import { Route as AppCatalogServicesRouteImport } from './routes/_app.catalog.services'
+import { Route as ApiTestCustomersCustomerIdRouteImport } from './routes/api.test.customers.$customerId'
+import { Route as AppCustomersCustomerIdEditRouteImport } from './routes/_app.customers.$customerId.edit'
 
 const SignOutRoute = SignOutRouteImport.update({
   id: '/sign-out',
@@ -24,48 +31,134 @@ const SignInRoute = SignInRouteImport.update({
   path: '/sign-in',
   getParentRoute: () => rootRouteImport,
 } as any)
-const IndexRoute = IndexRouteImport.update({
+const AppRoute = AppRouteImport.update({
+  id: '/_app',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AppIndexRoute = AppIndexRouteImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => AppRoute,
 } as any)
 const SignInSplatRoute = SignInSplatRouteImport.update({
   id: '/$',
   path: '/$',
   getParentRoute: () => SignInRoute,
 } as any)
+const AppCustomersRoute = AppCustomersRouteImport.update({
+  id: '/customers',
+  path: '/customers',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppCustomersIndexRoute = AppCustomersIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AppCustomersRoute,
+} as any)
+const AppCustomersNewRoute = AppCustomersNewRouteImport.update({
+  id: '/new',
+  path: '/new',
+  getParentRoute: () => AppCustomersRoute,
+} as any)
+const AppCatalogServicesRoute = AppCatalogServicesRouteImport.update({
+  id: '/catalog/services',
+  path: '/catalog/services',
+  getParentRoute: () => AppRoute,
+} as any)
+const ApiTestCustomersCustomerIdRoute =
+  ApiTestCustomersCustomerIdRouteImport.update({
+    id: '/api/test/customers/$customerId',
+    path: '/api/test/customers/$customerId',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const AppCustomersCustomerIdEditRoute =
+  AppCustomersCustomerIdEditRouteImport.update({
+    id: '/$customerId/edit',
+    path: '/$customerId/edit',
+    getParentRoute: () => AppCustomersRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
-  '/': typeof IndexRoute
+  '/': typeof AppIndexRoute
   '/sign-in': typeof SignInRouteWithChildren
   '/sign-out': typeof SignOutRoute
+  '/customers': typeof AppCustomersRouteWithChildren
   '/sign-in/$': typeof SignInSplatRoute
+  '/catalog/services': typeof AppCatalogServicesRoute
+  '/customers/new': typeof AppCustomersNewRoute
+  '/customers/': typeof AppCustomersIndexRoute
+  '/customers/$customerId/edit': typeof AppCustomersCustomerIdEditRoute
+  '/api/test/customers/$customerId': typeof ApiTestCustomersCustomerIdRoute
 }
 export interface FileRoutesByTo {
-  '/': typeof IndexRoute
   '/sign-in': typeof SignInRouteWithChildren
   '/sign-out': typeof SignOutRoute
   '/sign-in/$': typeof SignInSplatRoute
+  '/': typeof AppIndexRoute
+  '/catalog/services': typeof AppCatalogServicesRoute
+  '/customers/new': typeof AppCustomersNewRoute
+  '/customers': typeof AppCustomersIndexRoute
+  '/customers/$customerId/edit': typeof AppCustomersCustomerIdEditRoute
+  '/api/test/customers/$customerId': typeof ApiTestCustomersCustomerIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
-  '/': typeof IndexRoute
+  '/_app': typeof AppRouteWithChildren
   '/sign-in': typeof SignInRouteWithChildren
   '/sign-out': typeof SignOutRoute
+  '/_app/customers': typeof AppCustomersRouteWithChildren
   '/sign-in/$': typeof SignInSplatRoute
+  '/_app/': typeof AppIndexRoute
+  '/_app/catalog/services': typeof AppCatalogServicesRoute
+  '/_app/customers/new': typeof AppCustomersNewRoute
+  '/_app/customers/': typeof AppCustomersIndexRoute
+  '/_app/customers/$customerId/edit': typeof AppCustomersCustomerIdEditRoute
+  '/api/test/customers/$customerId': typeof ApiTestCustomersCustomerIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/sign-in' | '/sign-out' | '/sign-in/$'
+  fullPaths:
+    | '/'
+    | '/sign-in'
+    | '/sign-out'
+    | '/customers'
+    | '/sign-in/$'
+    | '/catalog/services'
+    | '/customers/new'
+    | '/customers/'
+    | '/customers/$customerId/edit'
+    | '/api/test/customers/$customerId'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/sign-in' | '/sign-out' | '/sign-in/$'
-  id: '__root__' | '/' | '/sign-in' | '/sign-out' | '/sign-in/$'
+  to:
+    | '/sign-in'
+    | '/sign-out'
+    | '/sign-in/$'
+    | '/'
+    | '/catalog/services'
+    | '/customers/new'
+    | '/customers'
+    | '/customers/$customerId/edit'
+    | '/api/test/customers/$customerId'
+  id:
+    | '__root__'
+    | '/_app'
+    | '/sign-in'
+    | '/sign-out'
+    | '/_app/customers'
+    | '/sign-in/$'
+    | '/_app/'
+    | '/_app/catalog/services'
+    | '/_app/customers/new'
+    | '/_app/customers/'
+    | '/_app/customers/$customerId/edit'
+    | '/api/test/customers/$customerId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
-  IndexRoute: typeof IndexRoute
+  AppRoute: typeof AppRouteWithChildren
   SignInRoute: typeof SignInRouteWithChildren
   SignOutRoute: typeof SignOutRoute
+  ApiTestCustomersCustomerIdRoute: typeof ApiTestCustomersCustomerIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -84,12 +177,19 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SignInRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/': {
-      id: '/'
+    '/_app': {
+      id: '/_app'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AppRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_app/': {
+      id: '/_app/'
       path: '/'
       fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof AppIndexRouteImport
+      parentRoute: typeof AppRoute
     }
     '/sign-in/$': {
       id: '/sign-in/$'
@@ -98,8 +198,80 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SignInSplatRouteImport
       parentRoute: typeof SignInRoute
     }
+    '/_app/customers': {
+      id: '/_app/customers'
+      path: '/customers'
+      fullPath: '/customers'
+      preLoaderRoute: typeof AppCustomersRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/customers/': {
+      id: '/_app/customers/'
+      path: '/'
+      fullPath: '/customers/'
+      preLoaderRoute: typeof AppCustomersIndexRouteImport
+      parentRoute: typeof AppCustomersRoute
+    }
+    '/_app/customers/new': {
+      id: '/_app/customers/new'
+      path: '/new'
+      fullPath: '/customers/new'
+      preLoaderRoute: typeof AppCustomersNewRouteImport
+      parentRoute: typeof AppCustomersRoute
+    }
+    '/_app/catalog/services': {
+      id: '/_app/catalog/services'
+      path: '/catalog/services'
+      fullPath: '/catalog/services'
+      preLoaderRoute: typeof AppCatalogServicesRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/api/test/customers/$customerId': {
+      id: '/api/test/customers/$customerId'
+      path: '/api/test/customers/$customerId'
+      fullPath: '/api/test/customers/$customerId'
+      preLoaderRoute: typeof ApiTestCustomersCustomerIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_app/customers/$customerId/edit': {
+      id: '/_app/customers/$customerId/edit'
+      path: '/$customerId/edit'
+      fullPath: '/customers/$customerId/edit'
+      preLoaderRoute: typeof AppCustomersCustomerIdEditRouteImport
+      parentRoute: typeof AppCustomersRoute
+    }
   }
 }
+
+interface AppCustomersRouteChildren {
+  AppCustomersNewRoute: typeof AppCustomersNewRoute
+  AppCustomersIndexRoute: typeof AppCustomersIndexRoute
+  AppCustomersCustomerIdEditRoute: typeof AppCustomersCustomerIdEditRoute
+}
+
+const AppCustomersRouteChildren: AppCustomersRouteChildren = {
+  AppCustomersNewRoute: AppCustomersNewRoute,
+  AppCustomersIndexRoute: AppCustomersIndexRoute,
+  AppCustomersCustomerIdEditRoute: AppCustomersCustomerIdEditRoute,
+}
+
+const AppCustomersRouteWithChildren = AppCustomersRoute._addFileChildren(
+  AppCustomersRouteChildren,
+)
+
+interface AppRouteChildren {
+  AppCustomersRoute: typeof AppCustomersRouteWithChildren
+  AppIndexRoute: typeof AppIndexRoute
+  AppCatalogServicesRoute: typeof AppCatalogServicesRoute
+}
+
+const AppRouteChildren: AppRouteChildren = {
+  AppCustomersRoute: AppCustomersRouteWithChildren,
+  AppIndexRoute: AppIndexRoute,
+  AppCatalogServicesRoute: AppCatalogServicesRoute,
+}
+
+const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
 
 interface SignInRouteChildren {
   SignInSplatRoute: typeof SignInSplatRoute
@@ -113,9 +285,10 @@ const SignInRouteWithChildren =
   SignInRoute._addFileChildren(SignInRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
-  IndexRoute: IndexRoute,
+  AppRoute: AppRouteWithChildren,
   SignInRoute: SignInRouteWithChildren,
   SignOutRoute: SignOutRoute,
+  ApiTestCustomersCustomerIdRoute: ApiTestCustomersCustomerIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
