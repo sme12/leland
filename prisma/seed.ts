@@ -67,28 +67,15 @@ async function main() {
         });
       }
 
-      for (const material of MATERIAL_SEED) {
-        const existing = await prisma.material.findFirst({
-          where: {
-            userId,
-            name: material.name,
-            category: material.category,
-            unitOfMeasure: material.unitOfMeasure,
-          },
-          select: { id: true },
-        });
-
-        if (!existing) {
-          await prisma.material.create({
-            data: {
-              userId,
-              name: material.name,
-              category: material.category,
-              unitOfMeasure: material.unitOfMeasure,
-            },
-          });
-        }
-      }
+      await prisma.material.createMany({
+        data: MATERIAL_SEED.map((material) => ({
+          userId,
+          name: material.name,
+          category: material.category,
+          unitOfMeasure: material.unitOfMeasure,
+        })),
+        skipDuplicates: true,
+      });
     }
   } finally {
     await prisma.$disconnect();

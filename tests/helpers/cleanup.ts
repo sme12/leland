@@ -22,7 +22,10 @@ async function collectCustomerIds(
   return page.locator('li[data-customer-id]').evaluateAll(
     (items, namePrefix) =>
       items
-        .filter((li) => li.textContent.includes(namePrefix))
+        .filter(
+          (li) =>
+            Boolean(li.textContent) && li.textContent.includes(namePrefix),
+        )
         .map((li) => li.getAttribute('data-customer-id'))
         .filter((id): id is string => Boolean(id)),
     prefix,
@@ -37,7 +40,10 @@ async function collectMaterialIds(
   return page.locator('li[data-material-id]').evaluateAll(
     (items, namePrefix) =>
       items
-        .filter((li) => li.textContent.includes(namePrefix))
+        .filter(
+          (li) =>
+            Boolean(li.textContent) && li.textContent.includes(namePrefix),
+        )
         .map((li) => li.getAttribute('data-material-id'))
         .filter((id): id is string => Boolean(id)),
     prefix,
@@ -94,7 +100,7 @@ export async function cleanupMaterialsByPrefix(page: Page, prefix: string) {
     for (const id of await collectMaterialIds(page, prefix)) ids.add(id);
 
     await page
-      .getByRole('tab', { name: /archived/i })
+      .getByRole('button', { name: /archived/i })
       .click()
       .catch(() => undefined);
     for (const id of await collectMaterialIds(page, prefix)) ids.add(id);

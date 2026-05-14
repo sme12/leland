@@ -21,11 +21,18 @@ export const Route = createFileRoute('/api/test/materials/$materialId')({
           return new Response('Bad request', { status: 400 });
         }
 
-        const { getScopedDb } = await import('#/server/db');
-        const db = getScopedDb(userId);
-        const result = await db.material.deleteMany({ where: { id } });
+        try {
+          const { getScopedDb } = await import('#/server/db');
+          const db = getScopedDb(userId);
+          const result = await db.material.deleteMany({ where: { id } });
 
-        return Response.json({ ok: true, deleted: result.count });
+          return Response.json({ ok: true, deleted: result.count });
+        } catch (error) {
+          const message =
+            error instanceof Error ? error.message : 'Unknown error';
+
+          return Response.json({ ok: false, error: message }, { status: 500 });
+        }
       },
     },
   },

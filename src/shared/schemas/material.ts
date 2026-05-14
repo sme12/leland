@@ -31,17 +31,21 @@ export const materialUpdateSchema = materialEditFormSchema
   })
   .strict();
 
-export const materialIdSchema = z.object({
-  id: z.string().min(1, { message: 'validation.idRequired' }),
-});
+export const materialIdSchema = z
+  .object({
+    id: z.string().min(1, { message: 'validation.idRequired' }),
+  })
+  .strict();
 
 export const materialListQuerySchema = z
   .object({ archived: z.boolean().optional() })
   .optional();
 
-export const materialArchiveSchema = materialIdSchema.extend({
-  isArchived: z.boolean(),
-});
+export const materialArchiveSchema = materialIdSchema
+  .extend({
+    isArchived: z.boolean(),
+  })
+  .strict();
 
 export type MaterialCreateInput = z.input<typeof materialCreateSchema>;
 export type MaterialCreateValues = z.output<typeof materialCreateSchema>;

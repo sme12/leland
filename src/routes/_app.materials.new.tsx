@@ -1,4 +1,5 @@
 import { useUser } from '@clerk/tanstack-react-start';
+import { Toast } from '@base-ui/react/toast';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link, createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useServerFn } from '@tanstack/react-start';
@@ -20,6 +21,7 @@ function NewMaterialRoute() {
   const userKey = user?.id ?? 'pending';
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const toast = Toast.useToastManager();
   const createMaterialFn = useServerFn(createMaterial);
   const mutation = useMutation({
     mutationFn: (values: MaterialCreateValues) =>
@@ -32,6 +34,10 @@ function NewMaterialRoute() {
     },
     onError: (error) => {
       console.error('Failed to create material:', error);
+      toast.add({
+        title: t('material.createFailed'),
+        description: error.message,
+      });
     },
   });
 
@@ -52,7 +58,7 @@ function NewMaterialRoute() {
           mode="create"
           submitLabel={t('material.create')}
           isSubmitting={mutation.isPending}
-          onSubmit={(values) => mutation.mutate(values as MaterialCreateValues)}
+          onSubmit={(values) => mutation.mutate(values)}
         />
       </div>
     </main>

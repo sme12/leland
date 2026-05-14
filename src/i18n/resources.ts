@@ -89,6 +89,7 @@ export const resources = {
         emptyArchived: 'No archived materials.',
         statusLabel: 'Material status',
         error: 'Could not load materials: {{message}}',
+        loadError: 'Could not load materials. Please try again.',
         groupCount_one: '{{count}} material',
         groupCount_few: '{{count}} materials',
         groupCount_many: '{{count}} materials',
@@ -128,6 +129,7 @@ export const resources = {
         notFoundBody: 'This material may have been archived or removed.',
         backToList: 'Back to materials',
         saveFailed: 'Could not save material',
+        createFailed: 'Failed to create material',
         saveFailedDescription: 'Check your connection and try again.',
       },
       service: {
@@ -231,6 +233,7 @@ export const resources = {
         emptyArchived: 'Архивных материалов нет.',
         statusLabel: 'Статус материалов',
         error: 'Не удалось загрузить материалы: {{message}}',
+        loadError: 'Не удалось загрузить материалы. Попробуйте ещё раз.',
         groupCount_one: '{{count}} материал',
         groupCount_few: '{{count}} материала',
         groupCount_many: '{{count}} материалов',
@@ -270,6 +273,7 @@ export const resources = {
         notFoundBody: 'Возможно, материал был перемещён в архив или удалён.',
         backToList: 'К списку материалов',
         saveFailed: 'Не удалось сохранить',
+        createFailed: 'Не удалось создать материал',
         saveFailedDescription: 'Проверьте подключение и попробуйте снова.',
       },
       service: {

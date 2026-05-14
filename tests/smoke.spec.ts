@@ -128,7 +128,7 @@ test('@smoke material CRUD uses grouped active and archived views', async ({
     .click();
   await expect(page.getByText(renamed)).toBeHidden();
 
-  await page.getByRole('tab', { name: /archived/i }).click();
+  await page.getByRole('button', { name: /archived/i }).click();
   await expect(page.getByText(renamed)).toBeVisible();
 
   page.once('dialog', (dialog) => dialog.accept());
@@ -169,7 +169,7 @@ test('customers and service prices are isolated by Clerk user', async ({
   await signInAs(page, 'B');
   await expect(page.getByText(isolatedName)).toBeHidden();
   await page.getByRole('link', { name: /materials/i }).click();
-  await expect(page.getByText(isolatedMaterial)).toBeHidden();
+  await expect(page.getByText(isolatedMaterial)).toHaveCount(0);
   await page.getByRole('link', { name: /service prices/i }).click();
   await expect(
     page.getByRole('textbox', { name: 'Cut', exact: true }),

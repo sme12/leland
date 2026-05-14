@@ -25,13 +25,23 @@ type MaterialFormInput = {
 
 type MaterialFormValues = MaterialCreateValues | MaterialEditFormValues;
 
-type MaterialFormProps = {
-  mode: MaterialFormMode;
+type MaterialFormBaseProps = {
   defaultValues?: MaterialFormInput;
   submitLabel: string;
   isSubmitting: boolean;
-  onSubmit: (values: MaterialFormValues) => void | Promise<void>;
 };
+
+type MaterialCreateFormProps = MaterialFormBaseProps & {
+  mode: 'create';
+  onSubmit: (values: MaterialCreateValues) => void | Promise<void>;
+};
+
+type MaterialEditFormProps = MaterialFormBaseProps & {
+  mode: 'edit';
+  onSubmit: (values: MaterialEditFormValues) => void | Promise<void>;
+};
+
+type MaterialFormProps = MaterialCreateFormProps | MaterialEditFormProps;
 
 export function MaterialForm({
   mode,
@@ -56,11 +66,16 @@ export function MaterialForm({
     setIsHydrated(true);
   }, []);
 
+  function submit(values: MaterialFormValues) {
+    if (mode === 'create') {
+      return onSubmit(values as MaterialCreateValues);
+    }
+
+    return onSubmit(values);
+  }
+
   return (
-    <form
-      className="space-y-5"
-      onSubmit={form.handleSubmit((values) => onSubmit(values))}
-    >
+    <form className="space-y-5" onSubmit={form.handleSubmit(submit)}>
       <label className="block">
         <span className="text-sm font-medium">{t('material.fields.name')}</span>
         <input

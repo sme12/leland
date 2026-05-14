@@ -11,7 +11,7 @@ import {
   Plus,
   RotateCcw,
 } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import type { MaterialDto } from '#/server/materials';
@@ -40,6 +40,12 @@ export function MaterialsList() {
     staleTime: Infinity,
     enabled: !!user,
   });
+
+  useEffect(() => {
+    if (query.isError) {
+      console.error('Failed to load materials:', query.error);
+    }
+  }, [query.error, query.isError]);
 
   const groupedMaterials = useMemo(() => {
     const collator = new Intl.Collator(i18n.language, { sensitivity: 'base' });
@@ -108,17 +114,16 @@ export function MaterialsList() {
 
       <div
         className="mt-6 inline-grid grid-cols-2 rounded-md border border-border bg-surface p-1"
-        role="tablist"
+        role="group"
         aria-label={t('material.statusLabel')}
       >
         {(['active', 'archived'] as const).map((item) => (
           <button
             key={item}
             type="button"
-            role="tab"
-            aria-selected={status === item}
+            aria-pressed={status === item}
             onClick={() => setStatus(item)}
-            className="h-9 rounded px-4 text-sm font-medium transition aria-selected:bg-foreground aria-selected:text-background"
+            className="h-9 rounded px-4 text-sm font-medium transition aria-pressed:bg-foreground aria-pressed:text-background"
           >
             {t(`material.status.${item}`)}
           </button>
@@ -131,9 +136,7 @@ export function MaterialsList() {
         className="mt-5 overflow-hidden rounded-md border border-border bg-surface"
       >
         {query.isError ? (
-          <p className="p-4 text-sm text-red-600">
-            {t('material.error', { message: query.error.message })}
-          </p>
+          <p className="p-4 text-sm text-red-600">{t('material.loadError')}</p>
         ) : query.isPending ? (
           <p className="p-4 text-sm text-muted-foreground">
             {t('material.loading')}
