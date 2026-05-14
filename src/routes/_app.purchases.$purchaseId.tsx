@@ -73,9 +73,15 @@ function PurchaseDetailRoute() {
         </p>
       ) : query.isError ? (
         <section className="mt-6 rounded-md border border-border bg-surface p-4 sm:p-6">
-          <p className="text-sm font-medium">{t('purchase.notFoundTitle')}</p>
+          <p className="text-sm font-medium">
+            {isPurchaseNotFoundError(query.error)
+              ? t('purchase.notFoundTitle')
+              : t('purchase.loadFailedTitle')}
+          </p>
           <p className="mt-1 text-sm text-muted-foreground">
-            {t('purchase.notFoundBody')}
+            {isPurchaseNotFoundError(query.error)
+              ? t('purchase.notFoundBody')
+              : t('purchase.loadFailedBody')}
           </p>
         </section>
       ) : (
@@ -155,6 +161,10 @@ function DetailItem({ label, value }: { label: string; value: string }) {
       <dd className="mt-1 font-semibold">{value}</dd>
     </div>
   );
+}
+
+function isPurchaseNotFoundError(error: unknown): boolean {
+  return error instanceof Error && error.message === 'purchase.notFound';
 }
 
 function formatDisplayDate(date: string, locale: string) {

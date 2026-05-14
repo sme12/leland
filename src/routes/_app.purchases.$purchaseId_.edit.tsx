@@ -101,9 +101,15 @@ function EditPurchaseRoute() {
           </p>
         ) : purchaseQuery.isError ? (
           <div className="space-y-3">
-            <p className="text-sm font-medium">{t('purchase.notFoundTitle')}</p>
+            <p className="text-sm font-medium">
+              {isPurchaseNotFoundError(purchaseQuery.error)
+                ? t('purchase.notFoundTitle')
+                : t('purchase.loadFailedTitle')}
+            </p>
             <p className="text-sm text-muted-foreground">
-              {t('purchase.notFoundBody')}
+              {isPurchaseNotFoundError(purchaseQuery.error)
+                ? t('purchase.notFoundBody')
+                : t('purchase.loadFailedBody')}
             </p>
           </div>
         ) : selectedMaterial ? (
@@ -137,6 +143,10 @@ function EditPurchaseRoute() {
       </section>
     </main>
   );
+}
+
+function isPurchaseNotFoundError(error: unknown): boolean {
+  return error instanceof Error && error.message === 'purchase.notFound';
 }
 
 function mergeCurrentMaterial(

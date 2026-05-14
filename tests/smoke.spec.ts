@@ -124,7 +124,7 @@ test('@smoke purchase CRUD uses inline material flow', async ({ page }) => {
     page.locator('section[data-purchase-category="color"]'),
   ).toContainText(/1 purchase/i);
 
-  await page.getByRole('link', { name: new RegExp(materialName) }).click();
+  await page.getByRole('link', { name: materialName }).click();
   await expect(page.getByRole('heading', { name: materialName })).toBeVisible();
   await expect(page.getByText('1,000 ml')).toBeVisible();
   await expect(page.getByText('€44.50')).toBeVisible();

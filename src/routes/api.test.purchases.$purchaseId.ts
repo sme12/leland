@@ -21,11 +21,20 @@ export const Route = createFileRoute('/api/test/purchases/$purchaseId')({
           return new Response('Bad request', { status: 400 });
         }
 
-        const { getScopedDb } = await import('#/server/db');
+        const { getScopedDb, prisma } = await import('#/server/db');
         const db = getScopedDb(userId);
-        const result = await db.purchase.deleteMany({ where: { id } });
+        const existing = await db.purchase.findFirst({
+          where: { id },
+          select: { id: true },
+        });
 
-        return Response.json({ ok: true, deleted: result.count });
+        if (!existing) {
+          return new Response('Not found', { status: 404 });
+        }
+
+        const deleted = await prisma.purchase.delete({ where: { id } });
+
+        return Response.json({ ok: true, deleted });
       },
     },
   },

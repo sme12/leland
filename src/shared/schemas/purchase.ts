@@ -24,9 +24,16 @@ export const purchaseDateSchema = z
   .string()
   .trim()
   .regex(dateOnlyPattern, 'validation.date')
-  .refine((value) => formatDateOnly(parseDateOnly(value)) === value, {
-    message: 'validation.date',
-  });
+  .refine(
+    (value) => {
+      try {
+        return formatDateOnly(parseDateOnly(value)) === value;
+      } catch {
+        return false;
+      }
+    },
+    { message: 'validation.date' },
+  );
 
 export const purchaseCreateSchema = z
   .object({
@@ -103,12 +110,36 @@ export type PurchaseEditPieceFormValues = z.output<
   typeof purchaseEditPieceFormSchema
 >;
 
+const daysInMonth = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+
+function isLeapYear(year: number) {
+  return (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0;
+}
+
 export function parseDateOnly(value: string) {
+  if (!dateOnlyPattern.test(value)) {
+    throw new Error('parseDateOnly expects a YYYY-MM-DD string');
+  }
+
   const [year, month, day] = value.split('-').map(Number);
+
+  if (month < 1 || month > 12) {
+    throw new Error('parseDateOnly received an invalid month');
+  }
+
+  const maxDay = month === 2 && isLeapYear(year) ? 29 : daysInMonth[month - 1];
+
+  if (day < 1 || day > maxDay) {
+    throw new Error('parseDateOnly received an invalid day');
+  }
 
   return new Date(Date.UTC(year, month - 1, day));
 }
 
 export function formatDateOnly(value: Date) {
+  if (!(value instanceof Date) || Number.isNaN(value.getTime())) {
+    throw new TypeError('formatDateOnly expects a valid Date');
+  }
+
   return value.toISOString().slice(0, 10);
 }
