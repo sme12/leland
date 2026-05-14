@@ -3,7 +3,7 @@ import { z } from 'zod/v4';
 const customerNameSchema = z
   .string()
   .trim()
-  .min(1, 'validation.customerNameRequired');
+  .min(1, { message: 'validation.customerNameRequired' });
 
 const customerCommentSchema = z
   .string()
@@ -18,11 +18,11 @@ export const customerFormSchema = z.object({
 });
 
 export const customerMutationSchema = customerFormSchema.extend({
-  id: z.string().min(1, 'validation.idRequired').optional(),
+  id: z.string().min(1, { message: 'validation.idRequired' }).optional(),
 });
 
 export const customerIdSchema = z.object({
-  id: z.string().min(1, 'validation.idRequired'),
+  id: z.string().min(1, { message: 'validation.idRequired' }),
 });
 
 export const customerListQuerySchema = z

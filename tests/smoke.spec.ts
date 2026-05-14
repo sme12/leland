@@ -42,7 +42,9 @@ test('customer CRUD uses active and archived views', async ({ page }) => {
 
   await expect(page.getByText(name)).toBeVisible();
 
-  await page.getByRole('link', { name: new RegExp(`edit ${name}`, 'i') }).click();
+  await page
+    .getByRole('link', { name: new RegExp(`edit ${name}`, 'i') })
+    .click();
   await page.getByLabel(/name/i).fill(renamed);
   await page.getByRole('button', { name: /save customer/i }).click();
   await expect(page.getByText(renamed)).toBeVisible();

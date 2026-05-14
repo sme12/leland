@@ -8,9 +8,7 @@ import type {
   CustomerFormInput,
   CustomerFormValues,
 } from '#/shared/schemas/customer';
-import {
-  customerFormSchema,
-} from '#/shared/schemas/customer';
+import { customerFormSchema } from '#/shared/schemas/customer';
 
 type CustomerFormProps = {
   defaultValues?: CustomerFormInput;
@@ -80,9 +78,11 @@ export function CustomerForm({
   );
 }
 
-const customerResolver: Resolver<CustomerFormInput, unknown, CustomerFormValues> = (
-  values,
-) => {
+const customerResolver: Resolver<
+  CustomerFormInput,
+  unknown,
+  CustomerFormValues
+> = (values) => {
   const result = customerFormSchema.safeParse(values);
 
   if (result.success) {

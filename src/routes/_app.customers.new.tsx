@@ -25,8 +25,13 @@ function NewCustomerRoute() {
     mutationFn: (values: CustomerFormValues) =>
       createCustomerFn({ data: values }),
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: customerKeys.all(userKey) });
+      await queryClient.invalidateQueries({
+        queryKey: customerKeys.all(userKey),
+      });
       await navigate({ to: '/customers' });
+    },
+    onError: (error) => {
+      console.error('Failed to create customer:', error);
     },
   });
 

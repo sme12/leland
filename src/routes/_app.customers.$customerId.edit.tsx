@@ -35,7 +35,9 @@ function EditCustomerRoute() {
     mutationFn: (values: CustomerFormValues) =>
       updateCustomerFn({ data: { ...values, id: customerId } }),
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: customerKeys.all(userKey) });
+      await queryClient.invalidateQueries({
+        queryKey: customerKeys.all(userKey),
+      });
       await navigate({ to: '/customers' });
     },
     onError: () => {

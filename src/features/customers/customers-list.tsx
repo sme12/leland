@@ -8,10 +8,7 @@ import { useTranslation } from 'react-i18next';
 
 import type { CustomerDto } from '#/server/customers';
 import type { CustomerStatus } from './customer-queries';
-import {
-  listCustomers,
-  setCustomerArchived,
-} from '#/server/customers';
+import { listCustomers, setCustomerArchived } from '#/server/customers';
 import { customerKeys } from './customer-queries';
 
 export function CustomersList() {
@@ -28,6 +25,7 @@ export function CustomersList() {
     queryKey: customerKeys.list(userKey, archived),
     queryFn: () => listCustomersFn({ data: { archived } }),
     staleTime: Infinity,
+    enabled: !!user,
   });
 
   const sortedCustomers = useMemo(() => {
@@ -41,7 +39,9 @@ export function CustomersList() {
     mutationFn: (input: { id: string; isArchived: boolean }) =>
       setArchivedFn({ data: input }),
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: customerKeys.all(userKey) });
+      await queryClient.invalidateQueries({
+        queryKey: customerKeys.all(userKey),
+      });
     },
   });
 
@@ -99,7 +99,11 @@ export function CustomersList() {
         data-loaded={query.isPending ? 'false' : 'true'}
         className="mt-5 overflow-hidden rounded-md border border-border bg-surface"
       >
-        {query.isPending ? (
+        {query.isError ? (
+          <p className="p-4 text-sm text-red-600">
+            {t('customer.error', { message: query.error.message })}
+          </p>
+        ) : query.isPending ? (
           <p className="p-4 text-sm text-muted-foreground">
             {t('customer.loading')}
           </p>

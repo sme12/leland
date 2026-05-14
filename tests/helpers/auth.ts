@@ -6,11 +6,11 @@ const userBEmail = process.env.CLERK_E2E_USER_B_EMAIL;
 
 export const e2eEnvReady = Boolean(
   process.env.CLERK_SECRET_KEY &&
-    process.env.CLERK_PUBLISHABLE_KEY &&
-    userAEmail &&
-    userBEmail &&
-    userAEmail !== userBEmail &&
-    process.env.DATABASE_URL,
+  process.env.CLERK_PUBLISHABLE_KEY &&
+  userAEmail &&
+  userBEmail &&
+  userAEmail !== userBEmail &&
+  process.env.DATABASE_URL,
 );
 
 export function getE2eEmail(user: 'A' | 'B') {
@@ -29,9 +29,9 @@ export function getE2eEmail(user: 'A' | 'B') {
 export async function signInAs(page: Page, user: 'A' | 'B') {
   await page.goto('/sign-in');
   await clerk.signOut({ page }).catch(() => undefined);
-  await page.waitForFunction(() => window.Clerk.user === null).catch(() => {
-    // Clerk can already be signed out; continue to the sign-in helper.
-  });
+  await page.waitForFunction(
+    () => typeof window.Clerk !== 'undefined' && window.Clerk.user === null,
+  );
   await page.goto('/sign-in');
   await clerk.signIn({
     page,

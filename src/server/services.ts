@@ -69,7 +69,7 @@ export const updateServiceDefaultPrice = createServerFn({ method: 'POST' })
       }
 
       const service = await db.service.findFirst({
-        where: { id: data.id },
+        where: { id: data.id, isArchived: false },
       });
 
       if (!service) {

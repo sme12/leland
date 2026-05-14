@@ -8,7 +8,10 @@ async function waitForCustomersListLoaded(page: Page) {
     .waitFor({ state: 'attached', timeout: 10_000 });
 }
 
-async function collectCustomerIds(page: Page, prefix: string): Promise<string[]> {
+async function collectCustomerIds(
+  page: Page,
+  prefix: string,
+): Promise<string[]> {
   await waitForCustomersListLoaded(page);
   return page.locator('li[data-customer-id]').evaluateAll(
     (items, namePrefix) =>
@@ -27,10 +30,15 @@ export async function cleanupCustomersByPrefix(page: Page, prefix: string) {
     await page.goto('/customers');
     for (const id of await collectCustomerIds(page, prefix)) ids.add(id);
 
-    await page.getByRole('tab', { name: /archived/i }).click().catch(() => undefined);
+    await page
+      .getByRole('tab', { name: /archived/i })
+      .click()
+      .catch(() => undefined);
     for (const id of await collectCustomerIds(page, prefix)) ids.add(id);
 
-    console.log(`[cleanup] found ${ids.size} customer(s) matching "${prefix}" to delete`);
+    console.log(
+      `[cleanup] found ${ids.size} customer(s) matching "${prefix}" to delete`,
+    );
 
     const results = await Promise.all(
       Array.from(ids).map(async (id) => {

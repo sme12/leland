@@ -15,5 +15,7 @@ export function getCustomersByStatus(
   status: CustomerStatus,
 ) {
   const isArchived = status === 'archived';
-  return customers?.filter((customer) => customer.isArchived === isArchived) ?? [];
+  return (
+    customers?.filter((customer) => customer.isArchived === isArchived) ?? []
+  );
 }

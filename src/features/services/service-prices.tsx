@@ -7,10 +7,7 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import type { ServiceDto } from '#/server/services';
-import {
-  listServices,
-  updateServiceDefaultPrice,
-} from '#/server/services';
+import { listServices, updateServiceDefaultPrice } from '#/server/services';
 
 const serviceKeys = {
   all: (userId: string) => ['services', userId] as const,
@@ -35,14 +32,19 @@ export function ServicePrices() {
     mutationFn: (input: { id: string; price: string | null }) =>
       updatePriceFn({ data: input }),
     onSuccess: async ({ service, previousPrice }) => {
-      await queryClient.invalidateQueries({ queryKey: serviceKeys.all(userKey) });
+      await queryClient.invalidateQueries({
+        queryKey: serviceKeys.all(userKey),
+      });
       toast.add({
         title: t('service.saved'),
         description: t('service.savedDescription'),
         actionProps: {
           children: t('common.undo'),
+          disabled: mutation.isPending,
           onClick: () => {
-            mutation.mutate({ id: service.id, price: previousPrice });
+            if (!mutation.isPending) {
+              mutation.mutate({ id: service.id, price: previousPrice });
+            }
           },
         },
       });

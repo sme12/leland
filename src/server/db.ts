@@ -6,7 +6,7 @@ import { PrismaClient } from '#/generated/prisma/client';
 const connectionString = process.env.DATABASE_URL;
 
 if (!connectionString && process.env.NODE_ENV !== 'test') {
-  console.warn('DATABASE_URL is not set; database calls will fail.');
+  throw new Error('DATABASE_URL is required');
 }
 
 const adapter = new PrismaNeon({ connectionString: connectionString ?? '' });
@@ -51,6 +51,35 @@ export function getScopedDb(userId: string, client: DbClient = prisma) {
           ...args,
           data: { ...args.data, userId },
         }),
+      update: (args: Prisma.CustomerUpdateArgs) =>
+        client.customer.update({
+          ...args,
+          where: scopedCustomerWhere(
+            userId,
+            args.where as CustomerWhere,
+          ) as any,
+        }),
+      delete: (args: Prisma.CustomerDeleteArgs) =>
+        client.customer.delete({
+          ...args,
+          where: scopedCustomerWhere(
+            userId,
+            args.where as CustomerWhere,
+          ) as any,
+        }),
+      upsert: (
+        args: Omit<Prisma.CustomerUpsertArgs, 'create'> & {
+          create: Omit<Prisma.CustomerCreateInput, 'userId'>;
+        },
+      ) =>
+        client.customer.upsert({
+          ...args,
+          where: scopedCustomerWhere(
+            userId,
+            args.where as CustomerWhere,
+          ) as any,
+          create: { ...args.create, userId },
+        }),
       updateMany: (args: Prisma.CustomerUpdateManyArgs) =>
         client.customer.updateMany({
           ...args,
@@ -88,6 +117,11 @@ export function getScopedDb(userId: string, client: DbClient = prisma) {
       },
       updateMany: (args: Prisma.ServiceUpdateManyArgs) =>
         client.service.updateMany({
+          ...args,
+          where: scopedServiceWhere(userId, args.where),
+        }),
+      deleteMany: (args: Prisma.ServiceDeleteManyArgs = {}) =>
+        client.service.deleteMany({
           ...args,
           where: scopedServiceWhere(userId, args.where),
         }),
