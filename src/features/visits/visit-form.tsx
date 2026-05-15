@@ -406,7 +406,7 @@ function VisitLineItemRow({
 
 export const visitFormResolver: Resolver<VisitFormFields> = (values) => {
   const schema = values.id ? visitUpdateSchema : visitCreateSchema;
-  const result = schema.safeParse(toVisitMutationInput(values));
+  const result = schema.safeParse(toVisitValidationInput(values));
 
   if (result.success) {
     return {
@@ -425,6 +425,22 @@ export const visitFormResolver: Resolver<VisitFormFields> = (values) => {
     ),
   };
 };
+
+function toVisitValidationInput(values: VisitFormFields) {
+  return {
+    ...(values.id ? { id: values.id } : {}),
+    customerId: values.customerId,
+    serviceId: values.serviceId,
+    date: values.date,
+    priceCharged: values.priceCharged,
+    note: values.note,
+    items: values.items.map((item) => ({
+      ...(item.id ? { id: item.id } : {}),
+      materialId: item.materialId,
+      amount: item.amount,
+    })),
+  };
+}
 
 export function createEmptyVisitFormValues(): VisitFormFields {
   return {
@@ -519,12 +535,14 @@ export function applyVisitServerError({
     (item) => item.materialId === parsed.materialId,
   );
 
-  if (index >= 0) {
-    setError(`items.${index}.materialId`, {
-      type: parsed.code,
-      message: 'visit.errors.materialNeedsPurchase',
-    });
+  if (index < 0) {
+    return false;
   }
+
+  setError(`items.${index}.materialId`, {
+    type: parsed.code,
+    message: 'visit.errors.materialNeedsPurchase',
+  });
 
   return true;
 }

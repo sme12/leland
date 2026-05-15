@@ -4,7 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useServerFn } from '@tanstack/react-start';
 import { ArrowLeft, PackagePlus } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { MaterialForm } from '#/features/materials/material-form';
@@ -42,6 +42,7 @@ function NewPurchaseRoute() {
     useState<MaterialDto | null>(null);
   const [isAddingMaterial, setIsAddingMaterial] = useState(false);
   const [isHydrated, setIsHydrated] = useState(false);
+  const hasAppliedPrefillRef = useRef(false);
   const materialsQuery = useQuery({
     queryKey: materialKeys.list(userKey, false),
     queryFn: () => listMaterialsFn({ data: { archived: false } }),
@@ -64,11 +65,16 @@ function NewPurchaseRoute() {
   }, []);
 
   useEffect(() => {
+    if (hasAppliedPrefillRef.current) {
+      return;
+    }
+
     if (!materialId || !materialsQuery.data) {
       return;
     }
 
     if (materialsQuery.data.some((material) => material.id === materialId)) {
+      hasAppliedPrefillRef.current = true;
       setSelectedMaterialId(materialId);
       setCreatedMaterialFallback(null);
     }

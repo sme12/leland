@@ -121,6 +121,7 @@ export function PickerSheet<TOption extends PickerSheetOption>({
                   value={query}
                   onChange={(event) => setQuery(event.target.value)}
                   placeholder={searchPlaceholder}
+                  aria-label={searchPlaceholder}
                   className="h-11 w-full rounded-md border border-border bg-background pl-9 pr-3 outline-none focus:ring-2 focus:ring-ring"
                 />
               </label>

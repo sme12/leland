@@ -53,6 +53,19 @@ export const visitUpdateSchema = visitCreateSchema
   })
   .strict();
 
+export const visitUpdateServerSchema = visitCreateSchema
+  .extend({
+    id: z.string().min(1, { message: 'validation.idRequired' }),
+    expectedUpdatedAt: z
+      .string()
+      .min(1, { message: 'validation.idRequired' })
+      .refine((value) => !Number.isNaN(Date.parse(value)), {
+        message: 'validation.date',
+      }),
+    items: z.array(visitLineItemUpdateSchema).default([]),
+  })
+  .strict();
+
 export const visitIdSchema = z
   .object({
     id: z.string().min(1, { message: 'validation.idRequired' }),

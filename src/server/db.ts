@@ -222,7 +222,7 @@ export function getScopedDb(userId: string, client: DbClient = prisma) {
         }),
       create: (
         args: Omit<Prisma.VisitCreateArgs, 'data'> & {
-          data: Omit<Prisma.VisitUncheckedCreateInput, 'userId'>;
+          data: Omit<Prisma.VisitUncheckedCreateInput, 'userId' | 'lineItems'>;
         },
       ) =>
         client.visit.create({

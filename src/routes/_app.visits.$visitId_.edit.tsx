@@ -92,8 +92,19 @@ function EditVisitRoute() {
     [materialsQuery.data, visitQuery.data],
   );
   const mutation = useMutation({
-    mutationFn: (values: VisitFormFields) =>
-      updateVisitFn({ data: toVisitMutationInput(values) }),
+    mutationFn: (values: VisitFormFields) => {
+      if (!visitQuery.data) {
+        throw new Error('visit.notFound');
+      }
+
+      return updateVisitFn({
+        data: {
+          ...toVisitMutationInput(values),
+          id: visitQuery.data.id,
+          expectedUpdatedAt: visitQuery.data.updatedAt,
+        },
+      });
+    },
     onSuccess: async (visit) => {
       await queryClient.invalidateQueries({ queryKey: visitKeys.root });
       queryClient.setQueryData(visitKeys.detail(userKey, visit.id), visit);
@@ -116,7 +127,7 @@ function EditVisitRoute() {
   });
 
   useEffect(() => {
-    if (visitQuery.data) {
+    if (visitQuery.data && !form.formState.isDirty) {
       form.reset(toVisitFormValues(visitQuery.data));
     }
   }, [form, visitQuery.data]);

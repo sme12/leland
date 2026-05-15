@@ -8,7 +8,7 @@ import { formatDateOnly, parseDateOnly } from '#/shared/schemas/purchase';
 import {
   visitCreateSchema,
   visitIdSchema,
-  visitUpdateSchema,
+  visitUpdateServerSchema,
 } from '#/shared/schemas/visit';
 import type { getScopedDb } from './db';
 
@@ -314,7 +314,7 @@ export const createVisit = createServerFn({ method: 'POST' })
   });
 
 export const updateVisit = createServerFn({ method: 'POST' })
-  .inputValidator((data: unknown) => visitUpdateSchema.parse(data))
+  .inputValidator((data: unknown) => visitUpdateServerSchema.parse(data))
   .handler(async ({ data }) => {
     const { requireServerUserId } = await import('./auth');
     const { withScopedTransaction } = await import('./db');
@@ -379,8 +379,8 @@ export const updateVisit = createServerFn({ method: 'POST' })
         .map((item) => item.id)
         .filter((id): id is string => Boolean(id));
 
-      await db.visit.updateMany({
-        where: { id: data.id },
+      const updateResult = await db.visit.updateMany({
+        where: { id: data.id, updatedAt: new Date(data.expectedUpdatedAt) },
         data: {
           customerId: data.customerId,
           serviceId: data.serviceId,
@@ -389,6 +389,10 @@ export const updateVisit = createServerFn({ method: 'POST' })
           note: data.note ?? null,
         },
       });
+
+      if (updateResult.count === 0) {
+        throw new Error('visit.concurrentModification');
+      }
 
       // tx.visitLineItem.* operates directly against the transaction client
       // because line items have no user_id column. Ownership is enforced via
