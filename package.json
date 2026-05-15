@@ -40,6 +40,7 @@
     "@tanstack/react-router-ssr-query": "1.166.12",
     "@tanstack/react-start": "1.167.65",
     "@tanstack/router-plugin": "1.167.35",
+    "date-fns": "^4.1.0",
     "decimal.js": "^10.6.0",
     "i18next": "^26.0.10",
     "i18next-browser-languagedetector": "^8.2.1",

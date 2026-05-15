@@ -4,7 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useServerFn } from '@tanstack/react-start';
 import { ArrowLeft, PackagePlus } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { MaterialForm } from '#/features/materials/material-form';
@@ -19,11 +19,16 @@ import type { MaterialCreateValues } from '#/shared/schemas/material';
 import type { PurchaseCreateValues } from '#/shared/schemas/purchase';
 
 export const Route = createFileRoute('/_app/purchases/new')({
+  validateSearch: (search: Record<string, unknown>) => ({
+    materialId:
+      typeof search.materialId === 'string' ? search.materialId : undefined,
+  }),
   component: NewPurchaseRoute,
 });
 
 function NewPurchaseRoute() {
   const { t } = useTranslation();
+  const { materialId } = Route.useSearch();
   const { user } = useUser();
   const userKey = user?.id ?? 'pending';
   const navigate = useNavigate();
@@ -37,6 +42,7 @@ function NewPurchaseRoute() {
     useState<MaterialDto | null>(null);
   const [isAddingMaterial, setIsAddingMaterial] = useState(false);
   const [isHydrated, setIsHydrated] = useState(false);
+  const hasAppliedPrefillRef = useRef(false);
   const materialsQuery = useQuery({
     queryKey: materialKeys.list(userKey, false),
     queryFn: () => listMaterialsFn({ data: { archived: false } }),
@@ -57,6 +63,22 @@ function NewPurchaseRoute() {
   useEffect(() => {
     setIsHydrated(true);
   }, []);
+
+  useEffect(() => {
+    if (hasAppliedPrefillRef.current) {
+      return;
+    }
+
+    if (!materialId || !materialsQuery.data) {
+      return;
+    }
+
+    if (materialsQuery.data.some((material) => material.id === materialId)) {
+      hasAppliedPrefillRef.current = true;
+      setSelectedMaterialId(materialId);
+      setCreatedMaterialFallback(null);
+    }
+  }, [materialId, materialsQuery.data]);
 
   const createMaterialMutation = useMutation({
     mutationFn: (values: MaterialCreateValues) =>
@@ -118,9 +140,9 @@ function NewPurchaseRoute() {
           <PurchaseMaterialSelect
             materials={materialsQuery.data}
             selectedId={selectedMaterialId}
-            onChange={(materialId) => {
-              setSelectedMaterialId(materialId);
-              if (createdMaterialFallback?.id !== materialId) {
+            onChange={(nextMaterialId) => {
+              setSelectedMaterialId(nextMaterialId);
+              if (createdMaterialFallback?.id !== nextMaterialId) {
                 setCreatedMaterialFallback(null);
               }
             }}

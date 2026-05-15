@@ -39,6 +39,7 @@ export function PurchasesList() {
         </div>
         <Link
           to="/purchases/new"
+          search={{ materialId: undefined }}
           className="inline-flex h-10 items-center gap-2 rounded-md bg-foreground px-3 text-sm font-semibold text-background outline-none hover:opacity-90 focus-visible:ring-2 focus-visible:ring-ring"
         >
           <Plus aria-hidden="true" className="size-4" />

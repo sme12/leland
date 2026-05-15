@@ -1,6 +1,8 @@
 import { PrismaNeon } from '@prisma/adapter-neon';
+import Decimal from 'decimal.js';
 
 import { PrismaClient } from '../src/generated/prisma/client';
+import { computeUnitCost } from '../src/domain/cost';
 import { MATERIAL_SEED } from '../src/shared/materialSeed';
 import { SERVICE_SEED } from '../src/shared/serviceSeed';
 
@@ -39,6 +41,28 @@ const seedPurchases = [
     totalQuantity: '3',
     totalPrice: '12',
     date: '2026-05-04',
+  },
+];
+
+const seedVisits = [
+  {
+    customerName: 'Anna Virtanen',
+    serviceName: 'service.color',
+    date: '2026-05-10',
+    priceCharged: '85',
+    note: 'Seed color visit',
+    items: [
+      { materialName: 'Color cream', amount: '80' },
+      { materialName: 'Cream developer', amount: '120' },
+    ],
+  },
+  {
+    customerName: 'Maria Korhonen',
+    serviceName: 'service.cut',
+    date: '2026-05-12',
+    priceCharged: '40',
+    note: null,
+    items: [],
   },
 ];
 
@@ -148,6 +172,96 @@ async function main() {
             },
           });
         }
+      }
+
+      const customers = await prisma.customer.findMany({
+        where: {
+          userId,
+          name: { in: seedVisits.map((visit) => visit.customerName) },
+        },
+        select: { id: true, name: true },
+      });
+      const services = await prisma.service.findMany({
+        where: {
+          userId,
+          name: { in: seedVisits.map((visit) => visit.serviceName) },
+        },
+        select: { id: true, name: true },
+      });
+      const visitMaterialNames = seedVisits.flatMap((visit) =>
+        visit.items.map((item) => item.materialName),
+      );
+      const visitMaterials = await prisma.material.findMany({
+        where: { userId, name: { in: visitMaterialNames } },
+        select: { id: true, name: true },
+      });
+
+      for (const visit of seedVisits) {
+        const customer = customers.find(
+          (item) => item.name === visit.customerName,
+        );
+        const service = services.find(
+          (item) => item.name === visit.serviceName,
+        );
+
+        if (!customer || !service) {
+          continue;
+        }
+
+        const date = parseSeedDate(visit.date);
+        const existing = await prisma.visit.findFirst({
+          where: {
+            userId,
+            customerId: customer.id,
+            serviceId: service.id,
+            date,
+            priceCharged: visit.priceCharged,
+          },
+          select: { id: true },
+        });
+
+        if (existing) {
+          continue;
+        }
+
+        const lineItems = [];
+
+        for (const item of visit.items) {
+          const material = visitMaterials.find(
+            (candidate) => candidate.name === item.materialName,
+          );
+
+          if (!material) {
+            continue;
+          }
+
+          const purchases = await prisma.purchase.findMany({
+            where: { userId, materialId: material.id },
+            orderBy: [{ date: 'desc' }, { createdAt: 'desc' }],
+          });
+          const unitCost = computeUnitCost(purchases).toDecimalPlaces(6);
+
+          lineItems.push({
+            materialId: material.id,
+            amount: item.amount,
+            unitCost,
+            totalCost: new Decimal(item.amount)
+              .mul(unitCost)
+              .toDecimalPlaces(4),
+          });
+        }
+
+        await prisma.visit.create({
+          data: {
+            userId,
+            customerId: customer.id,
+            serviceId: service.id,
+            date,
+            priceCharged: visit.priceCharged,
+            note: visit.note,
+            lineItems: { create: lineItems },
+          },
+        });
       }
     }
   } finally {

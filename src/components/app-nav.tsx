@@ -1,6 +1,7 @@
 import { Show, SignInButton, UserButton } from '@clerk/tanstack-react-start';
 import { Link } from '@tanstack/react-router';
 import {
+  CalendarDays,
   LogIn,
   LogOut,
   Package,
@@ -26,6 +27,15 @@ export function AppNav() {
         </Link>
         <nav aria-label={t('app.name')} className="flex items-center gap-2">
           <Show when="signed-in">
+            <Link
+              to="/visits"
+              aria-label={t('nav.visits')}
+              title={t('nav.visits')}
+              activeProps={{ className: 'bg-muted' }}
+              className="inline-flex size-10 items-center justify-center rounded-md border border-border bg-surface text-foreground shadow-sm outline-none transition hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              <CalendarDays aria-hidden="true" className="size-4" />
+            </Link>
             <Link
               to="/customers"
               aria-label={t('nav.customers')}
