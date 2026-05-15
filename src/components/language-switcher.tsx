@@ -56,8 +56,12 @@ export function LanguageSwitcher() {
         </Select.Icon>
       </Select.Trigger>
       <Select.Portal>
-        <Select.Positioner alignItemWithTrigger={false} sideOffset={8}>
-          <Select.Popup className="z-50 min-w-36 rounded-md border border-border bg-surface p-1 shadow-lg">
+        <Select.Positioner
+          alignItemWithTrigger={false}
+          sideOffset={8}
+          className="z-[60]"
+        >
+          <Select.Popup className="min-w-36 rounded-md border border-border bg-surface p-1 shadow-lg">
             <Select.List>
               {items.map((item) => (
                 <Select.Item
