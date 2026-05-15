@@ -360,7 +360,7 @@ function VisitLineItemRow({
           type="button"
           onClick={onRemove}
           aria-label={t('visit.removeLineItem')}
-          className="mt-7 inline-flex size-10 shrink-0 items-center justify-center rounded-md border border-border text-danger outline-none hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring"
+          className="mt-8 inline-flex size-11 shrink-0 items-center justify-center rounded-md border border-border text-danger outline-none hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring"
         >
           <Trash2 aria-hidden="true" className="size-4" />
         </button>
