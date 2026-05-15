@@ -2,7 +2,7 @@ import { useUser } from '@clerk/tanstack-react-start';
 import { useQuery } from '@tanstack/react-query';
 import { useServerFn } from '@tanstack/react-start';
 import Decimal from 'decimal.js';
-import { Plus, Trash2 } from 'lucide-react';
+import { Check, Plus, Trash2 } from 'lucide-react';
 import { useEffect, useMemo } from 'react';
 import type { Resolver } from 'react-hook-form';
 import { useFieldArray, useFormContext, useWatch } from 'react-hook-form';
@@ -12,6 +12,7 @@ import type { CustomerDto } from '#/server/customers';
 import type { ServiceDto } from '#/server/services';
 import type { VisitMaterialPickerDto } from '#/server/visits';
 import { getCurrentUnitCost, parseVisitServerError } from '#/server/visits';
+import { getVisitPriceSuggestion } from './price-suggestion';
 import { getServicePrefillValue } from './service-prefill';
 import { PickerSheet } from './picker-sheet';
 import { visitKeys } from './visit-queries';
@@ -76,6 +77,22 @@ export function VisitFormBody({
   );
   const serviceId = useWatch({ control: form.control, name: 'serviceId' });
   const selectedService = services.find((service) => service.id === serviceId);
+  const priceCharged = useWatch({
+    control: form.control,
+    name: 'priceCharged',
+  });
+  const items = useWatch({ control: form.control, name: 'items' });
+  const priceSuggestion = useMemo(() => {
+    if (mode !== 'create') {
+      return null;
+    }
+
+    return getVisitPriceSuggestion({
+      currentPriceCharged: priceCharged,
+      serviceDefaultPrice: selectedService?.defaultPrice ?? null,
+      items,
+    });
+  }, [items, mode, priceCharged, selectedService?.defaultPrice]);
 
   return (
     <div className="space-y-6 pb-28">
@@ -214,24 +231,49 @@ export function VisitFormBody({
         }}
       />
 
-      <label className="block">
-        <span className="text-sm font-medium">
-          {t('visit.fields.priceCharged')}
-        </span>
-        <input
-          {...form.register('priceCharged')}
-          inputMode="decimal"
-          className="mt-2 h-11 w-full rounded-md border border-border bg-surface px-3 outline-none focus:ring-2 focus:ring-ring"
-        />
-        {form.formState.errors.priceCharged ? (
-          <span className="mt-2 block text-sm text-danger">
-            {t(
-              form.formState.errors.priceCharged.message ??
-                'validation.generic',
-            )}
+      <div>
+        <label className="block">
+          <span className="text-sm font-medium">
+            {t('visit.fields.priceCharged')}
           </span>
+          <input
+            {...form.register('priceCharged')}
+            inputMode="decimal"
+            className="mt-2 h-11 w-full rounded-md border border-border bg-surface px-3 outline-none focus:ring-2 focus:ring-ring"
+          />
+          {form.formState.errors.priceCharged ? (
+            <span className="mt-2 block text-sm text-danger">
+              {t(
+                form.formState.errors.priceCharged.message ??
+                  'validation.generic',
+              )}
+            </span>
+          ) : null}
+        </label>
+
+        {priceSuggestion ? (
+          <div className="mt-2 flex flex-wrap items-center justify-between gap-2 rounded-md bg-muted/45 px-3 py-2">
+            <span className="text-sm text-muted-foreground">
+              {t('visit.priceSuggestion', {
+                value: formatEuro(priceSuggestion, i18n.language),
+              })}
+            </span>
+            <button
+              type="button"
+              onClick={() =>
+                form.setValue('priceCharged', priceSuggestion, {
+                  shouldDirty: true,
+                  shouldValidate: true,
+                })
+              }
+              className="inline-flex h-9 items-center gap-2 rounded-md border border-border bg-surface px-3 text-sm font-semibold outline-none hover:bg-background focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              <Check aria-hidden="true" className="size-4" />
+              {t('visit.applyPriceSuggestion')}
+            </button>
+          </div>
         ) : null}
-      </label>
+      </div>
 
       <label className="block">
         <span className="text-sm font-medium">{t('visit.fields.note')}</span>
