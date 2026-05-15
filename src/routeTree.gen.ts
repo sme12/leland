@@ -14,23 +14,30 @@ import { Route as SignInRouteImport } from './routes/sign-in'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as AppIndexRouteImport } from './routes/_app.index'
 import { Route as SignInSplatRouteImport } from './routes/sign-in.$'
+import { Route as AppVisitsRouteImport } from './routes/_app.visits'
 import { Route as AppPurchasesRouteImport } from './routes/_app.purchases'
 import { Route as AppMaterialsRouteImport } from './routes/_app.materials'
 import { Route as AppCustomersRouteImport } from './routes/_app.customers'
+import { Route as AppVisitsIndexRouteImport } from './routes/_app.visits.index'
 import { Route as AppPurchasesIndexRouteImport } from './routes/_app.purchases.index'
 import { Route as AppMaterialsIndexRouteImport } from './routes/_app.materials.index'
 import { Route as AppCustomersIndexRouteImport } from './routes/_app.customers.index'
+import { Route as AppVisitsNewRouteImport } from './routes/_app.visits.new'
+import { Route as AppVisitsVisitIdRouteImport } from './routes/_app.visits.$visitId'
 import { Route as AppPurchasesNewRouteImport } from './routes/_app.purchases.new'
 import { Route as AppPurchasesPurchaseIdRouteImport } from './routes/_app.purchases.$purchaseId'
 import { Route as AppMaterialsNewRouteImport } from './routes/_app.materials.new'
 import { Route as AppCustomersNewRouteImport } from './routes/_app.customers.new'
 import { Route as AppCatalogServicesRouteImport } from './routes/_app.catalog.services'
+import { Route as ApiTestVisitsVisitIdRouteImport } from './routes/api.test.visits.$visitId'
 import { Route as ApiTestPurchasesPurchaseIdRouteImport } from './routes/api.test.purchases.$purchaseId'
 import { Route as ApiTestMaterialsMaterialIdRouteImport } from './routes/api.test.materials.$materialId'
 import { Route as ApiTestCustomersCustomerIdRouteImport } from './routes/api.test.customers.$customerId'
+import { Route as AppVisitsVisitIdEditRouteImport } from './routes/_app.visits.$visitId_.edit'
 import { Route as AppPurchasesPurchaseIdEditRouteImport } from './routes/_app.purchases.$purchaseId_.edit'
 import { Route as AppMaterialsMaterialIdEditRouteImport } from './routes/_app.materials.$materialId.edit'
 import { Route as AppCustomersCustomerIdEditRouteImport } from './routes/_app.customers.$customerId.edit'
+import { Route as AppVisitsNewCustomerNewRouteImport } from './routes/_app.visits.new.customer.new'
 
 const SignOutRoute = SignOutRouteImport.update({
   id: '/sign-out',
@@ -56,6 +63,11 @@ const SignInSplatRoute = SignInSplatRouteImport.update({
   path: '/$',
   getParentRoute: () => SignInRoute,
 } as any)
+const AppVisitsRoute = AppVisitsRouteImport.update({
+  id: '/visits',
+  path: '/visits',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppPurchasesRoute = AppPurchasesRouteImport.update({
   id: '/purchases',
   path: '/purchases',
@@ -71,6 +83,11 @@ const AppCustomersRoute = AppCustomersRouteImport.update({
   path: '/customers',
   getParentRoute: () => AppRoute,
 } as any)
+const AppVisitsIndexRoute = AppVisitsIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AppVisitsRoute,
+} as any)
 const AppPurchasesIndexRoute = AppPurchasesIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -85,6 +102,16 @@ const AppCustomersIndexRoute = AppCustomersIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AppCustomersRoute,
+} as any)
+const AppVisitsNewRoute = AppVisitsNewRouteImport.update({
+  id: '/new',
+  path: '/new',
+  getParentRoute: () => AppVisitsRoute,
+} as any)
+const AppVisitsVisitIdRoute = AppVisitsVisitIdRouteImport.update({
+  id: '/$visitId',
+  path: '/$visitId',
+  getParentRoute: () => AppVisitsRoute,
 } as any)
 const AppPurchasesNewRoute = AppPurchasesNewRouteImport.update({
   id: '/new',
@@ -111,6 +138,11 @@ const AppCatalogServicesRoute = AppCatalogServicesRouteImport.update({
   path: '/catalog/services',
   getParentRoute: () => AppRoute,
 } as any)
+const ApiTestVisitsVisitIdRoute = ApiTestVisitsVisitIdRouteImport.update({
+  id: '/api/test/visits/$visitId',
+  path: '/api/test/visits/$visitId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiTestPurchasesPurchaseIdRoute =
   ApiTestPurchasesPurchaseIdRouteImport.update({
     id: '/api/test/purchases/$purchaseId',
@@ -129,6 +161,11 @@ const ApiTestCustomersCustomerIdRoute =
     path: '/api/test/customers/$customerId',
     getParentRoute: () => rootRouteImport,
   } as any)
+const AppVisitsVisitIdEditRoute = AppVisitsVisitIdEditRouteImport.update({
+  id: '/$visitId_/edit',
+  path: '/$visitId/edit',
+  getParentRoute: () => AppVisitsRoute,
+} as any)
 const AppPurchasesPurchaseIdEditRoute =
   AppPurchasesPurchaseIdEditRouteImport.update({
     id: '/$purchaseId_/edit',
@@ -147,6 +184,11 @@ const AppCustomersCustomerIdEditRoute =
     path: '/$customerId/edit',
     getParentRoute: () => AppCustomersRoute,
   } as any)
+const AppVisitsNewCustomerNewRoute = AppVisitsNewCustomerNewRouteImport.update({
+  id: '/customer/new',
+  path: '/customer/new',
+  getParentRoute: () => AppVisitsNewRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AppIndexRoute
@@ -155,21 +197,28 @@ export interface FileRoutesByFullPath {
   '/customers': typeof AppCustomersRouteWithChildren
   '/materials': typeof AppMaterialsRouteWithChildren
   '/purchases': typeof AppPurchasesRouteWithChildren
+  '/visits': typeof AppVisitsRouteWithChildren
   '/sign-in/$': typeof SignInSplatRoute
   '/catalog/services': typeof AppCatalogServicesRoute
   '/customers/new': typeof AppCustomersNewRoute
   '/materials/new': typeof AppMaterialsNewRoute
   '/purchases/$purchaseId': typeof AppPurchasesPurchaseIdRoute
   '/purchases/new': typeof AppPurchasesNewRoute
+  '/visits/$visitId': typeof AppVisitsVisitIdRoute
+  '/visits/new': typeof AppVisitsNewRouteWithChildren
   '/customers/': typeof AppCustomersIndexRoute
   '/materials/': typeof AppMaterialsIndexRoute
   '/purchases/': typeof AppPurchasesIndexRoute
+  '/visits/': typeof AppVisitsIndexRoute
   '/customers/$customerId/edit': typeof AppCustomersCustomerIdEditRoute
   '/materials/$materialId/edit': typeof AppMaterialsMaterialIdEditRoute
   '/purchases/$purchaseId/edit': typeof AppPurchasesPurchaseIdEditRoute
+  '/visits/$visitId/edit': typeof AppVisitsVisitIdEditRoute
   '/api/test/customers/$customerId': typeof ApiTestCustomersCustomerIdRoute
   '/api/test/materials/$materialId': typeof ApiTestMaterialsMaterialIdRoute
   '/api/test/purchases/$purchaseId': typeof ApiTestPurchasesPurchaseIdRoute
+  '/api/test/visits/$visitId': typeof ApiTestVisitsVisitIdRoute
+  '/visits/new/customer/new': typeof AppVisitsNewCustomerNewRoute
 }
 export interface FileRoutesByTo {
   '/sign-in': typeof SignInRouteWithChildren
@@ -181,15 +230,21 @@ export interface FileRoutesByTo {
   '/materials/new': typeof AppMaterialsNewRoute
   '/purchases/$purchaseId': typeof AppPurchasesPurchaseIdRoute
   '/purchases/new': typeof AppPurchasesNewRoute
+  '/visits/$visitId': typeof AppVisitsVisitIdRoute
+  '/visits/new': typeof AppVisitsNewRouteWithChildren
   '/customers': typeof AppCustomersIndexRoute
   '/materials': typeof AppMaterialsIndexRoute
   '/purchases': typeof AppPurchasesIndexRoute
+  '/visits': typeof AppVisitsIndexRoute
   '/customers/$customerId/edit': typeof AppCustomersCustomerIdEditRoute
   '/materials/$materialId/edit': typeof AppMaterialsMaterialIdEditRoute
   '/purchases/$purchaseId/edit': typeof AppPurchasesPurchaseIdEditRoute
+  '/visits/$visitId/edit': typeof AppVisitsVisitIdEditRoute
   '/api/test/customers/$customerId': typeof ApiTestCustomersCustomerIdRoute
   '/api/test/materials/$materialId': typeof ApiTestMaterialsMaterialIdRoute
   '/api/test/purchases/$purchaseId': typeof ApiTestPurchasesPurchaseIdRoute
+  '/api/test/visits/$visitId': typeof ApiTestVisitsVisitIdRoute
+  '/visits/new/customer/new': typeof AppVisitsNewCustomerNewRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -199,6 +254,7 @@ export interface FileRoutesById {
   '/_app/customers': typeof AppCustomersRouteWithChildren
   '/_app/materials': typeof AppMaterialsRouteWithChildren
   '/_app/purchases': typeof AppPurchasesRouteWithChildren
+  '/_app/visits': typeof AppVisitsRouteWithChildren
   '/sign-in/$': typeof SignInSplatRoute
   '/_app/': typeof AppIndexRoute
   '/_app/catalog/services': typeof AppCatalogServicesRoute
@@ -206,15 +262,21 @@ export interface FileRoutesById {
   '/_app/materials/new': typeof AppMaterialsNewRoute
   '/_app/purchases/$purchaseId': typeof AppPurchasesPurchaseIdRoute
   '/_app/purchases/new': typeof AppPurchasesNewRoute
+  '/_app/visits/$visitId': typeof AppVisitsVisitIdRoute
+  '/_app/visits/new': typeof AppVisitsNewRouteWithChildren
   '/_app/customers/': typeof AppCustomersIndexRoute
   '/_app/materials/': typeof AppMaterialsIndexRoute
   '/_app/purchases/': typeof AppPurchasesIndexRoute
+  '/_app/visits/': typeof AppVisitsIndexRoute
   '/_app/customers/$customerId/edit': typeof AppCustomersCustomerIdEditRoute
   '/_app/materials/$materialId/edit': typeof AppMaterialsMaterialIdEditRoute
   '/_app/purchases/$purchaseId_/edit': typeof AppPurchasesPurchaseIdEditRoute
+  '/_app/visits/$visitId_/edit': typeof AppVisitsVisitIdEditRoute
   '/api/test/customers/$customerId': typeof ApiTestCustomersCustomerIdRoute
   '/api/test/materials/$materialId': typeof ApiTestMaterialsMaterialIdRoute
   '/api/test/purchases/$purchaseId': typeof ApiTestPurchasesPurchaseIdRoute
+  '/api/test/visits/$visitId': typeof ApiTestVisitsVisitIdRoute
+  '/_app/visits/new/customer/new': typeof AppVisitsNewCustomerNewRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -225,21 +287,28 @@ export interface FileRouteTypes {
     | '/customers'
     | '/materials'
     | '/purchases'
+    | '/visits'
     | '/sign-in/$'
     | '/catalog/services'
     | '/customers/new'
     | '/materials/new'
     | '/purchases/$purchaseId'
     | '/purchases/new'
+    | '/visits/$visitId'
+    | '/visits/new'
     | '/customers/'
     | '/materials/'
     | '/purchases/'
+    | '/visits/'
     | '/customers/$customerId/edit'
     | '/materials/$materialId/edit'
     | '/purchases/$purchaseId/edit'
+    | '/visits/$visitId/edit'
     | '/api/test/customers/$customerId'
     | '/api/test/materials/$materialId'
     | '/api/test/purchases/$purchaseId'
+    | '/api/test/visits/$visitId'
+    | '/visits/new/customer/new'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/sign-in'
@@ -251,15 +320,21 @@ export interface FileRouteTypes {
     | '/materials/new'
     | '/purchases/$purchaseId'
     | '/purchases/new'
+    | '/visits/$visitId'
+    | '/visits/new'
     | '/customers'
     | '/materials'
     | '/purchases'
+    | '/visits'
     | '/customers/$customerId/edit'
     | '/materials/$materialId/edit'
     | '/purchases/$purchaseId/edit'
+    | '/visits/$visitId/edit'
     | '/api/test/customers/$customerId'
     | '/api/test/materials/$materialId'
     | '/api/test/purchases/$purchaseId'
+    | '/api/test/visits/$visitId'
+    | '/visits/new/customer/new'
   id:
     | '__root__'
     | '/_app'
@@ -268,6 +343,7 @@ export interface FileRouteTypes {
     | '/_app/customers'
     | '/_app/materials'
     | '/_app/purchases'
+    | '/_app/visits'
     | '/sign-in/$'
     | '/_app/'
     | '/_app/catalog/services'
@@ -275,15 +351,21 @@ export interface FileRouteTypes {
     | '/_app/materials/new'
     | '/_app/purchases/$purchaseId'
     | '/_app/purchases/new'
+    | '/_app/visits/$visitId'
+    | '/_app/visits/new'
     | '/_app/customers/'
     | '/_app/materials/'
     | '/_app/purchases/'
+    | '/_app/visits/'
     | '/_app/customers/$customerId/edit'
     | '/_app/materials/$materialId/edit'
     | '/_app/purchases/$purchaseId_/edit'
+    | '/_app/visits/$visitId_/edit'
     | '/api/test/customers/$customerId'
     | '/api/test/materials/$materialId'
     | '/api/test/purchases/$purchaseId'
+    | '/api/test/visits/$visitId'
+    | '/_app/visits/new/customer/new'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -293,6 +375,7 @@ export interface RootRouteChildren {
   ApiTestCustomersCustomerIdRoute: typeof ApiTestCustomersCustomerIdRoute
   ApiTestMaterialsMaterialIdRoute: typeof ApiTestMaterialsMaterialIdRoute
   ApiTestPurchasesPurchaseIdRoute: typeof ApiTestPurchasesPurchaseIdRoute
+  ApiTestVisitsVisitIdRoute: typeof ApiTestVisitsVisitIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -332,6 +415,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SignInSplatRouteImport
       parentRoute: typeof SignInRoute
     }
+    '/_app/visits': {
+      id: '/_app/visits'
+      path: '/visits'
+      fullPath: '/visits'
+      preLoaderRoute: typeof AppVisitsRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/purchases': {
       id: '/_app/purchases'
       path: '/purchases'
@@ -353,6 +443,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppCustomersRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/visits/': {
+      id: '/_app/visits/'
+      path: '/'
+      fullPath: '/visits/'
+      preLoaderRoute: typeof AppVisitsIndexRouteImport
+      parentRoute: typeof AppVisitsRoute
+    }
     '/_app/purchases/': {
       id: '/_app/purchases/'
       path: '/'
@@ -373,6 +470,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/customers/'
       preLoaderRoute: typeof AppCustomersIndexRouteImport
       parentRoute: typeof AppCustomersRoute
+    }
+    '/_app/visits/new': {
+      id: '/_app/visits/new'
+      path: '/new'
+      fullPath: '/visits/new'
+      preLoaderRoute: typeof AppVisitsNewRouteImport
+      parentRoute: typeof AppVisitsRoute
+    }
+    '/_app/visits/$visitId': {
+      id: '/_app/visits/$visitId'
+      path: '/$visitId'
+      fullPath: '/visits/$visitId'
+      preLoaderRoute: typeof AppVisitsVisitIdRouteImport
+      parentRoute: typeof AppVisitsRoute
     }
     '/_app/purchases/new': {
       id: '/_app/purchases/new'
@@ -409,6 +520,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppCatalogServicesRouteImport
       parentRoute: typeof AppRoute
     }
+    '/api/test/visits/$visitId': {
+      id: '/api/test/visits/$visitId'
+      path: '/api/test/visits/$visitId'
+      fullPath: '/api/test/visits/$visitId'
+      preLoaderRoute: typeof ApiTestVisitsVisitIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/test/purchases/$purchaseId': {
       id: '/api/test/purchases/$purchaseId'
       path: '/api/test/purchases/$purchaseId'
@@ -430,6 +548,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiTestCustomersCustomerIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_app/visits/$visitId_/edit': {
+      id: '/_app/visits/$visitId_/edit'
+      path: '/$visitId/edit'
+      fullPath: '/visits/$visitId/edit'
+      preLoaderRoute: typeof AppVisitsVisitIdEditRouteImport
+      parentRoute: typeof AppVisitsRoute
+    }
     '/_app/purchases/$purchaseId_/edit': {
       id: '/_app/purchases/$purchaseId_/edit'
       path: '/$purchaseId/edit'
@@ -450,6 +575,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/customers/$customerId/edit'
       preLoaderRoute: typeof AppCustomersCustomerIdEditRouteImport
       parentRoute: typeof AppCustomersRoute
+    }
+    '/_app/visits/new/customer/new': {
+      id: '/_app/visits/new/customer/new'
+      path: '/customer/new'
+      fullPath: '/visits/new/customer/new'
+      preLoaderRoute: typeof AppVisitsNewCustomerNewRouteImport
+      parentRoute: typeof AppVisitsNewRoute
     }
   }
 }
@@ -504,10 +636,41 @@ const AppPurchasesRouteWithChildren = AppPurchasesRoute._addFileChildren(
   AppPurchasesRouteChildren,
 )
 
+interface AppVisitsNewRouteChildren {
+  AppVisitsNewCustomerNewRoute: typeof AppVisitsNewCustomerNewRoute
+}
+
+const AppVisitsNewRouteChildren: AppVisitsNewRouteChildren = {
+  AppVisitsNewCustomerNewRoute: AppVisitsNewCustomerNewRoute,
+}
+
+const AppVisitsNewRouteWithChildren = AppVisitsNewRoute._addFileChildren(
+  AppVisitsNewRouteChildren,
+)
+
+interface AppVisitsRouteChildren {
+  AppVisitsVisitIdRoute: typeof AppVisitsVisitIdRoute
+  AppVisitsNewRoute: typeof AppVisitsNewRouteWithChildren
+  AppVisitsIndexRoute: typeof AppVisitsIndexRoute
+  AppVisitsVisitIdEditRoute: typeof AppVisitsVisitIdEditRoute
+}
+
+const AppVisitsRouteChildren: AppVisitsRouteChildren = {
+  AppVisitsVisitIdRoute: AppVisitsVisitIdRoute,
+  AppVisitsNewRoute: AppVisitsNewRouteWithChildren,
+  AppVisitsIndexRoute: AppVisitsIndexRoute,
+  AppVisitsVisitIdEditRoute: AppVisitsVisitIdEditRoute,
+}
+
+const AppVisitsRouteWithChildren = AppVisitsRoute._addFileChildren(
+  AppVisitsRouteChildren,
+)
+
 interface AppRouteChildren {
   AppCustomersRoute: typeof AppCustomersRouteWithChildren
   AppMaterialsRoute: typeof AppMaterialsRouteWithChildren
   AppPurchasesRoute: typeof AppPurchasesRouteWithChildren
+  AppVisitsRoute: typeof AppVisitsRouteWithChildren
   AppIndexRoute: typeof AppIndexRoute
   AppCatalogServicesRoute: typeof AppCatalogServicesRoute
 }
@@ -516,6 +679,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppCustomersRoute: AppCustomersRouteWithChildren,
   AppMaterialsRoute: AppMaterialsRouteWithChildren,
   AppPurchasesRoute: AppPurchasesRouteWithChildren,
+  AppVisitsRoute: AppVisitsRouteWithChildren,
   AppIndexRoute: AppIndexRoute,
   AppCatalogServicesRoute: AppCatalogServicesRoute,
 }
@@ -540,6 +704,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiTestCustomersCustomerIdRoute: ApiTestCustomersCustomerIdRoute,
   ApiTestMaterialsMaterialIdRoute: ApiTestMaterialsMaterialIdRoute,
   ApiTestPurchasesPurchaseIdRoute: ApiTestPurchasesPurchaseIdRoute,
+  ApiTestVisitsVisitIdRoute: ApiTestVisitsVisitIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

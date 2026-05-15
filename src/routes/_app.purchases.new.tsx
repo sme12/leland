@@ -19,11 +19,16 @@ import type { MaterialCreateValues } from '#/shared/schemas/material';
 import type { PurchaseCreateValues } from '#/shared/schemas/purchase';
 
 export const Route = createFileRoute('/_app/purchases/new')({
+  validateSearch: (search: Record<string, unknown>) => ({
+    materialId:
+      typeof search.materialId === 'string' ? search.materialId : undefined,
+  }),
   component: NewPurchaseRoute,
 });
 
 function NewPurchaseRoute() {
   const { t } = useTranslation();
+  const { materialId } = Route.useSearch();
   const { user } = useUser();
   const userKey = user?.id ?? 'pending';
   const navigate = useNavigate();
@@ -57,6 +62,17 @@ function NewPurchaseRoute() {
   useEffect(() => {
     setIsHydrated(true);
   }, []);
+
+  useEffect(() => {
+    if (!materialId || !materialsQuery.data) {
+      return;
+    }
+
+    if (materialsQuery.data.some((material) => material.id === materialId)) {
+      setSelectedMaterialId(materialId);
+      setCreatedMaterialFallback(null);
+    }
+  }, [materialId, materialsQuery.data]);
 
   const createMaterialMutation = useMutation({
     mutationFn: (values: MaterialCreateValues) =>
@@ -118,9 +134,9 @@ function NewPurchaseRoute() {
           <PurchaseMaterialSelect
             materials={materialsQuery.data}
             selectedId={selectedMaterialId}
-            onChange={(materialId) => {
-              setSelectedMaterialId(materialId);
-              if (createdMaterialFallback?.id !== materialId) {
+            onChange={(nextMaterialId) => {
+              setSelectedMaterialId(nextMaterialId);
+              if (createdMaterialFallback?.id !== nextMaterialId) {
                 setCreatedMaterialFallback(null);
               }
             }}

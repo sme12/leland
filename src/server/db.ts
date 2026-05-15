@@ -18,6 +18,7 @@ type CustomerWhere = Prisma.CustomerWhereInput;
 type MaterialWhere = Prisma.MaterialWhereInput;
 type PurchaseWhere = Prisma.PurchaseWhereInput;
 type ServiceWhere = Prisma.ServiceWhereInput;
+type VisitWhere = Prisma.VisitWhereInput;
 
 function scopedCustomerWhere(userId: string, where?: CustomerWhere) {
   return {
@@ -38,6 +39,12 @@ function scopedPurchaseWhere(userId: string, where?: PurchaseWhere) {
 }
 
 function scopedServiceWhere(userId: string, where?: ServiceWhere) {
+  return {
+    AND: [{ userId }, where ?? {}],
+  };
+}
+
+function scopedVisitWhere(userId: string, where?: VisitWhere) {
   return {
     AND: [{ userId }, where ?? {}],
   };
@@ -200,6 +207,37 @@ export function getScopedDb(userId: string, client: DbClient = prisma) {
         client.service.deleteMany({
           ...args,
           where: scopedServiceWhere(userId, args.where),
+        }),
+    },
+    visit: {
+      findMany: (args: Prisma.VisitFindManyArgs = {}) =>
+        client.visit.findMany({
+          ...args,
+          where: scopedVisitWhere(userId, args.where),
+        }),
+      findFirst: (args: Prisma.VisitFindFirstArgs = {}) =>
+        client.visit.findFirst({
+          ...args,
+          where: scopedVisitWhere(userId, args.where),
+        }),
+      create: (
+        args: Omit<Prisma.VisitCreateArgs, 'data'> & {
+          data: Omit<Prisma.VisitUncheckedCreateInput, 'userId'>;
+        },
+      ) =>
+        client.visit.create({
+          ...args,
+          data: { ...args.data, userId },
+        }),
+      updateMany: (args: Prisma.VisitUpdateManyArgs) =>
+        client.visit.updateMany({
+          ...args,
+          where: scopedVisitWhere(userId, args.where),
+        }),
+      deleteMany: (args: Prisma.VisitDeleteManyArgs = {}) =>
+        client.visit.deleteMany({
+          ...args,
+          where: scopedVisitWhere(userId, args.where),
         }),
     },
   };
