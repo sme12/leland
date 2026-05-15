@@ -40,8 +40,8 @@ async function ensureServicePrice(
 
 async function getVisitServicePrices(page: Page) {
   await page.getByRole('link', { name: /service prices/i }).click();
-  const cut = await ensureServicePrice(page, 'Cut', '40');
-  const color = await ensureServicePrice(page, 'Color', '85');
+  const color = await ensureServicePrice(page, 'Color', '30');
+  const colorAndCut = await ensureServicePrice(page, 'Color + Cut', '40');
   const other = page.getByRole('textbox', { name: 'Other', exact: true });
 
   if ((await other.inputValue()) !== '') {
@@ -50,7 +50,7 @@ async function getVisitServicePrices(page: Page) {
     await expect(page.getByText(/price saved/i)).toBeVisible();
   }
 
-  return { cut, color };
+  return { color, colorAndCut };
 }
 
 async function selectExistingPurchaseMaterial(
@@ -409,14 +409,16 @@ test('@smoke visit prefill validation and pure labor save', async ({
   await page.getByText(customerName).click();
 
   await page.getByRole('button', { name: /pick a service/i }).click();
-  await page.getByText('Cut', { exact: true }).click();
-  await expect(page.getByLabel(/charged/i)).toHaveValue(servicePrices.cut);
-  await page.getByRole('button', { name: /cut/i }).click();
+  await page.getByText('Color + Cut', { exact: true }).click();
+  await expect(page.getByLabel(/charged/i)).toHaveValue(
+    servicePrices.colorAndCut,
+  );
+  await page.getByRole('button', { name: /color \+ cut/i }).click();
   await page.getByText('Color', { exact: true }).click();
   await expect(page.getByLabel(/charged/i)).toHaveValue(servicePrices.color);
   await page.getByLabel(/charged/i).fill('50');
-  await page.getByRole('button', { name: /color/i }).click();
-  await page.getByText('Cut', { exact: true }).click();
+  await page.getByRole('button', { name: 'Color', exact: true }).click();
+  await page.getByText('Color + Cut', { exact: true }).click();
   await expect(page.getByLabel(/charged/i)).toHaveValue('50');
 
   await page.reload();
@@ -431,7 +433,7 @@ test('@smoke visit prefill validation and pure labor save', async ({
   ).toBeDisabled();
 
   await page.getByRole('button', { name: /other/i }).click();
-  await page.getByText('Cut', { exact: true }).click();
+  await page.getByText('Color + Cut', { exact: true }).click();
   await page.getByLabel(/^date$/i).fill('2999-01-01');
   await expect(page.getByText(/future/i)).toBeVisible();
   await expect(
@@ -444,7 +446,7 @@ test('@smoke visit prefill validation and pure labor save', async ({
   await page.getByPlaceholder(/search customers/i).fill(customerName);
   await page.getByText(customerName).click();
   await page.getByRole('button', { name: /pick a service/i }).click();
-  await page.getByText('Cut', { exact: true }).click();
+  await page.getByText('Color + Cut', { exact: true }).click();
   await page.getByLabel(/^date$/i).fill('2020-01-01');
   await page.getByRole('button', { name: /save visit/i }).click();
   await expect(page.locator('section[data-visits-list]')).toContainText(
@@ -534,10 +536,13 @@ test('customers and service prices are isolated by Clerk user', async ({
   );
 
   await page.getByRole('link', { name: /service prices/i }).click();
-  const cutPrice = page.getByRole('textbox', { name: 'Cut', exact: true });
-  await cutPrice.fill(isolatedPrice);
-  await cutPrice.blur();
-  await expect(cutPrice).toHaveValue(isolatedPrice);
+  const colorAndCutPrice = page.getByRole('textbox', {
+    name: 'Color + Cut',
+    exact: true,
+  });
+  await colorAndCutPrice.fill(isolatedPrice);
+  await colorAndCutPrice.blur();
+  await expect(colorAndCutPrice).toHaveValue(isolatedPrice);
 
   await signInAs(page, 'B');
   await expect(page.getByText(isolatedName)).toBeHidden();
@@ -547,6 +552,6 @@ test('customers and service prices are isolated by Clerk user', async ({
   await expect(page.getByText(isolatedMaterial)).toHaveCount(0);
   await page.getByRole('link', { name: /service prices/i }).click();
   await expect(
-    page.getByRole('textbox', { name: 'Cut', exact: true }),
+    page.getByRole('textbox', { name: 'Color + Cut', exact: true }),
   ).not.toHaveValue(isolatedPrice);
 });

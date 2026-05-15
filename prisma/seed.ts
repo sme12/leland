@@ -49,7 +49,7 @@ const seedVisits = [
     customerName: 'Anna Virtanen',
     serviceName: 'service.color',
     date: '2026-05-10',
-    priceCharged: '85',
+    priceCharged: '30',
     note: 'Seed color visit',
     items: [
       { materialName: 'Color cream', amount: '80' },
@@ -58,7 +58,7 @@ const seedVisits = [
   },
   {
     customerName: 'Maria Korhonen',
-    serviceName: 'service.cut',
+    serviceName: 'service.cutAndColor',
     date: '2026-05-12',
     priceCharged: '40',
     note: null,

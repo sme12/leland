@@ -7,10 +7,10 @@ describe('getServicePrefillValue', () => {
     expect(
       getServicePrefillValue({
         currentValue: '',
-        defaultPrice: '85',
+        defaultPrice: '30',
         isDirty: false,
       }),
-    ).toBe('85');
+    ).toBe('30');
   });
 
   it('clears charged for null defaults while charged is clean', () => {
@@ -27,7 +27,7 @@ describe('getServicePrefillValue', () => {
     expect(
       getServicePrefillValue({
         currentValue: '50',
-        defaultPrice: '85',
+        defaultPrice: '30',
         isDirty: true,
       }),
     ).toBe('50');
