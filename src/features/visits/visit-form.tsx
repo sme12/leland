@@ -222,11 +222,6 @@ export function VisitFormBody({
           const isChargedDirty = Boolean(
             form.formState.dirtyFields.priceCharged,
           );
-          const nextCharged = getServicePrefillValue({
-            currentValue: form.getValues('priceCharged'),
-            defaultPrice: service.defaultPrice,
-            isDirty: isChargedDirty || mode === 'edit',
-          });
 
           form.setValue('serviceId', service.id, {
             shouldDirty: true,
@@ -234,6 +229,12 @@ export function VisitFormBody({
           });
 
           if (!isChargedDirty && mode === 'create') {
+            const nextCharged = getServicePrefillValue({
+              currentValue: form.getValues('priceCharged'),
+              defaultPrice: service.defaultPrice,
+              isDirty: false,
+            });
+
             form.setValue('priceCharged', nextCharged, {
               shouldDirty: false,
               shouldValidate: true,

@@ -21,6 +21,13 @@ const optionalMoneyStringSchema = z
   )
   .transform((value) => value ?? null);
 
+const expectedUpdatedAtSchema = z
+  .string()
+  .min(1, { message: 'validation.idRequired' })
+  .refine((value) => !Number.isNaN(Date.parse(value)), {
+    message: 'validation.date',
+  });
+
 export const visitDraftDateSchema = z
   .string()
   .trim()
@@ -62,12 +69,7 @@ export const visitDraftUpdateSchema = visitDraftCreateSchema
 export const visitDraftUpdateServerSchema = visitDraftCreateSchema
   .extend({
     id: z.string().min(1, { message: 'validation.idRequired' }),
-    expectedUpdatedAt: z
-      .string()
-      .min(1, { message: 'validation.idRequired' })
-      .refine((value) => !Number.isNaN(Date.parse(value)), {
-        message: 'validation.date',
-      }),
+    expectedUpdatedAt: expectedUpdatedAtSchema,
     items: z.array(materialEstimateUpdateSchema).default([]),
   })
   .strict();
@@ -78,7 +80,12 @@ export const visitDraftIdSchema = z
   })
   .strict();
 
-export const visitDraftPublishSchema = visitDraftIdSchema;
+export const visitDraftPublishSchema = z
+  .object({
+    id: z.string().min(1, { message: 'validation.idRequired' }),
+    expectedUpdatedAt: expectedUpdatedAtSchema,
+  })
+  .strict();
 export const visitDraftDiscardSchema = visitDraftIdSchema;
 
 export type VisitDraftCreateInput = z.input<typeof visitDraftCreateSchema>;

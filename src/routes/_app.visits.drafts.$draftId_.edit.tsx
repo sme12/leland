@@ -123,12 +123,23 @@ function EditVisitDraftRoute() {
     onError: (error) => {
       toast.add({
         title: t('visit.saveDraftFailed'),
-        description: error.message,
+        description: describeDraftError(error, t),
       });
     },
   });
   const publishMutation = useMutation({
-    mutationFn: () => publishVisitDraftFn({ data: { id: draftId } }),
+    mutationFn: () => {
+      if (!draftQuery.data) {
+        throw new Error('visitDraft.notFound');
+      }
+
+      return publishVisitDraftFn({
+        data: {
+          id: draftId,
+          expectedUpdatedAt: draftQuery.data.updatedAt,
+        },
+      });
+    },
     onSuccess: async (visit) => {
       await queryClient.invalidateQueries({ queryKey: visitKeys.root });
       queryClient.removeQueries({
@@ -147,7 +158,7 @@ function EditVisitDraftRoute() {
       if (!mapped) {
         toast.add({
           title: t('visit.publishDraftFailed'),
-          description: error.message,
+          description: describeDraftError(error, t),
         });
       }
     },
@@ -352,9 +363,20 @@ function mergeMaterials(
 
   for (const item of draft.materialEstimates) {
     if (!merged.some((material) => material.id === item.material.id)) {
-      merged.unshift({ ...item.material, hasPurchases: false });
+      merged.unshift(item.material);
     }
   }
 
   return merged;
+}
+
+function describeDraftError(
+  error: { message?: string },
+  t: (key: string) => string,
+): string | undefined {
+  if (error.message === 'visitDraft.concurrentModification') {
+    return t('visit.errors.draftConcurrentModification');
+  }
+
+  return error.message;
 }

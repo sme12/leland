@@ -211,6 +211,10 @@ function NewVisitFormScreen() {
     !isReady || mutation.isPending || visitMissingKeys.length > 0;
   const isDraftSubmitDisabled =
     !isReady || draftMutation.isPending || draftMissingKeys.length > 0;
+  const hintKey =
+    visitMissingKeys.length === 0 || draftMissingKeys.length === 0
+      ? undefined
+      : visitMissingKeys[0];
 
   return (
     <main className="mx-auto w-full max-w-2xl px-4 py-8">
@@ -284,10 +288,8 @@ function NewVisitFormScreen() {
                 <strong>{formatEuro(previewCost, i18n.language)}</strong>
               </span>
             </div>
-            {visitMissingKeys[0] ? (
-              <p className="mt-1 text-xs text-muted-foreground">
-                {t(visitMissingKeys[0])}
-              </p>
+            {hintKey ? (
+              <p className="mt-1 text-xs text-muted-foreground">{t(hintKey)}</p>
             ) : null}
           </div>
           <div className="flex shrink-0 flex-wrap justify-end gap-2">

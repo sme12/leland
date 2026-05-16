@@ -74,7 +74,7 @@ export type VisitMaterialEstimateDto = {
   id: string;
   materialId: string;
   amount: string;
-  material: VisitMaterialDto;
+  material: VisitMaterialPickerDto;
 };
 
 export type VisitDraftDto = {
@@ -197,6 +197,7 @@ type VisitDraftRecord = VisitDraftBaseRecord & {
       unitOfMeasure: string;
       category: string;
       isArchived: boolean;
+      _count: { purchases: number };
     };
   }>;
 };
@@ -219,7 +220,11 @@ const visitDraftInclude = {
   customer: true,
   service: true,
   materialEstimates: {
-    include: { material: true },
+    include: {
+      material: {
+        include: { _count: { select: { purchases: true } } },
+      },
+    },
     orderBy: { createdAt: 'asc' },
   },
 } as const;
@@ -302,16 +307,21 @@ function toVisitDraftDto(draft: VisitDraftRecord): VisitDraftDto {
       ...draft.service,
       defaultPrice: draft.service.defaultPrice?.toString() ?? null,
     },
-    materialEstimates: draft.materialEstimates.map((item) => ({
-      id: item.id,
-      materialId: item.materialId,
-      amount: item.amount.toString(),
-      material: {
-        ...item.material,
-        unitOfMeasure: item.material.unitOfMeasure as UnitOfMeasure,
-        category: item.material.category as MaterialCategory,
-      },
-    })),
+    materialEstimates: draft.materialEstimates.map((item) => {
+      const { _count, ...materialBase } = item.material;
+
+      return {
+        id: item.id,
+        materialId: item.materialId,
+        amount: item.amount.toString(),
+        material: {
+          ...materialBase,
+          unitOfMeasure: materialBase.unitOfMeasure as UnitOfMeasure,
+          category: materialBase.category as MaterialCategory,
+          hasPurchases: _count.purchases > 0,
+        },
+      };
+    }),
   };
 }
 
@@ -662,7 +672,16 @@ export const publishVisitDraft = createServerFn({ method: 'POST' })
         });
       }
 
-      await db.visitDraft.deleteMany({ where: { id: draft.id } });
+      const deleteResult = await db.visitDraft.deleteMany({
+        where: {
+          id: draft.id,
+          updatedAt: new Date(data.expectedUpdatedAt),
+        },
+      });
+
+      if (deleteResult.count === 0) {
+        throw new Error('visitDraft.concurrentModification');
+      }
 
       const persisted = (await db.visit.findFirst({
         where: { id: visit.id },

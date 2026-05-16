@@ -253,6 +253,8 @@ export const resources = {
         errors: {
           materialNeedsPurchase:
             'This material has no purchases yet — add a purchase before using it.',
+          draftConcurrentModification:
+            'This draft was changed elsewhere. Refresh to see the latest version.',
         },
         missing: {
           customer: 'Pick a customer to save.',
@@ -530,6 +532,8 @@ export const resources = {
         errors: {
           materialNeedsPurchase:
             'У материала ещё нет покупок — добавьте покупку, прежде чем использовать его.',
+          draftConcurrentModification:
+            'Этот черновик был изменён в другом месте. Обновите страницу, чтобы увидеть актуальные данные.',
         },
         missing: {
           customer: 'Выберите клиента для сохранения.',
