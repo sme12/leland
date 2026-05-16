@@ -7,6 +7,7 @@ import { ArrowLeft, Pencil, Trash2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 import { purchaseKeys } from '#/features/purchases/purchase-queries';
+import { invalidateVisitMaterialQueries } from '#/features/visits/visit-query-invalidation';
 import { deletePurchase, getPurchase } from '#/server/purchases';
 import {
   computePurchaseUnitCost,
@@ -38,9 +39,16 @@ function PurchaseDetailRoute() {
   const deleteMutation = useMutation({
     mutationFn: () => deletePurchaseFn({ data: { id: purchaseId } }),
     onSuccess: async () => {
-      await queryClient.invalidateQueries({
-        queryKey: purchaseKeys.all(userKey),
-      });
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: purchaseKeys.all(userKey),
+        }),
+        invalidateVisitMaterialQueries({
+          queryClient,
+          userId: userKey,
+          materialIds: [query.data?.materialId],
+        }),
+      ]);
       await navigate({ to: '/purchases' });
     },
     onError: (error) => {

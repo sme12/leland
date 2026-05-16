@@ -12,6 +12,7 @@ import { materialKeys } from '#/features/materials/material-queries';
 import { PurchaseForm } from '#/features/purchases/purchase-form';
 import { PurchaseMaterialSelect } from '#/features/purchases/purchase-material-select';
 import { purchaseKeys } from '#/features/purchases/purchase-queries';
+import { invalidateVisitMaterialQueries } from '#/features/visits/visit-query-invalidation';
 import { createMaterial, listMaterials } from '#/server/materials';
 import type { MaterialDto } from '#/server/materials';
 import { createPurchase } from '#/server/purchases';
@@ -84,9 +85,12 @@ function NewPurchaseRoute() {
     mutationFn: (values: MaterialCreateValues) =>
       createMaterialFn({ data: values }),
     onSuccess: async (material) => {
-      await queryClient.invalidateQueries({
-        queryKey: materialKeys.root,
-      });
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: materialKeys.root,
+        }),
+        invalidateVisitMaterialQueries({ queryClient, userId: userKey }),
+      ]);
       setCreatedMaterialFallback(material);
       setSelectedMaterialId(material.id);
       setIsAddingMaterial(false);
@@ -102,10 +106,17 @@ function NewPurchaseRoute() {
   const createPurchaseMutation = useMutation({
     mutationFn: (values: PurchaseCreateValues) =>
       createPurchaseFn({ data: values }),
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({
-        queryKey: purchaseKeys.all(userKey),
-      });
+    onSuccess: async (purchase) => {
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: purchaseKeys.all(userKey),
+        }),
+        invalidateVisitMaterialQueries({
+          queryClient,
+          userId: userKey,
+          materialIds: [purchase.materialId],
+        }),
+      ]);
       await navigate({ to: '/purchases' });
     },
     onError: (error) => {

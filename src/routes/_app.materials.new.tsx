@@ -1,3 +1,4 @@
+import { useUser } from '@clerk/tanstack-react-start';
 import { Toast } from '@base-ui/react/toast';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link, createFileRoute, useNavigate } from '@tanstack/react-router';
@@ -7,6 +8,7 @@ import { useTranslation } from 'react-i18next';
 
 import { MaterialForm } from '#/features/materials/material-form';
 import { materialKeys } from '#/features/materials/material-queries';
+import { invalidateVisitMaterialQueries } from '#/features/visits/visit-query-invalidation';
 import { createMaterial } from '#/server/materials';
 import type { MaterialCreateValues } from '#/shared/schemas/material';
 
@@ -16,6 +18,8 @@ export const Route = createFileRoute('/_app/materials/new')({
 
 function NewMaterialRoute() {
   const { t } = useTranslation();
+  const { user } = useUser();
+  const userKey = user?.id ?? 'pending';
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const toast = Toast.useToastManager();
@@ -24,9 +28,12 @@ function NewMaterialRoute() {
     mutationFn: (values: MaterialCreateValues) =>
       createMaterialFn({ data: values }),
     onSuccess: async () => {
-      await queryClient.invalidateQueries({
-        queryKey: materialKeys.root,
-      });
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: materialKeys.root,
+        }),
+        invalidateVisitMaterialQueries({ queryClient, userId: userKey }),
+      ]);
       await navigate({ to: '/materials' });
     },
     onError: (error) => {

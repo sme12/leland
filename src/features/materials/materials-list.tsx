@@ -17,6 +17,7 @@ import { useTranslation } from 'react-i18next';
 import type { MaterialDto } from '#/server/materials';
 import type { MaterialCategory } from '#/shared/enums';
 import type { MaterialStatus } from './material-queries';
+import { invalidateVisitMaterialQueries } from '#/features/visits/visit-query-invalidation';
 import { listMaterials, setMaterialArchived } from '#/server/materials';
 import { MATERIAL_CATEGORIES } from '#/shared/enums';
 import { materialKeys } from './material-queries';
@@ -62,9 +63,12 @@ export function MaterialsList() {
     mutationFn: (input: { id: string; isArchived: boolean }) =>
       setArchivedFn({ data: input }),
     onSuccess: async () => {
-      await queryClient.invalidateQueries({
-        queryKey: materialKeys.root,
-      });
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: materialKeys.root,
+        }),
+        invalidateVisitMaterialQueries({ queryClient, userId: userKey }),
+      ]);
     },
   });
 
