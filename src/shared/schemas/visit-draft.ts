@@ -86,7 +86,13 @@ export const visitDraftPublishSchema = z
     expectedUpdatedAt: expectedUpdatedAtSchema,
   })
   .strict();
-export const visitDraftDiscardSchema = visitDraftIdSchema;
+
+export const visitDraftDiscardSchema = z
+  .object({
+    id: z.string().min(1, { message: 'validation.idRequired' }),
+    expectedUpdatedAt: expectedUpdatedAtSchema,
+  })
+  .strict();
 
 export type VisitDraftCreateInput = z.input<typeof visitDraftCreateSchema>;
 export type VisitDraftCreateValues = z.output<typeof visitDraftCreateSchema>;

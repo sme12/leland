@@ -37,6 +37,7 @@ model Customer {
   visits      Visit[]
   visitDrafts VisitDraft[]
 
+  @@unique([id, userId])
   @@index([userId, isArchived, name])
   @@map("customers")
 }
@@ -54,6 +55,7 @@ model Material {
   lineItems     VisitLineItem[]
   estimates     MaterialEstimate[]
 
+  @@unique([id, userId])
   @@unique([userId, name, category, unitOfMeasure])
   @@index([userId, isArchived, category, name])
   @@map("materials")
@@ -71,6 +73,7 @@ model Service {
   visits       Visit[]
   visitDrafts  VisitDraft[]
 
+  @@unique([id, userId])
   @@unique([userId, name])
   @@unique([userId, displayOrder])
   @@index([userId, isArchived, displayOrder])
@@ -126,10 +129,11 @@ model VisitDraft {
   createdAt      DateTime @default(now()) @map("created_at")
   updatedAt      DateTime @updatedAt @map("updated_at")
 
-  customer          Customer           @relation(fields: [customerId], references: [id], onDelete: Restrict)
-  service           Service            @relation(fields: [serviceId], references: [id], onDelete: Restrict)
+  customer          Customer           @relation(fields: [customerId, userId], references: [id, userId], onDelete: Restrict)
+  service           Service            @relation(fields: [serviceId, userId], references: [id, userId], onDelete: Restrict)
   materialEstimates MaterialEstimate[]
 
+  @@unique([id, userId])
   @@index([userId, date, createdAt])
   @@index([userId, customerId, date])
   @@index([userId, serviceId, date])
@@ -156,16 +160,17 @@ model VisitLineItem {
 
 model MaterialEstimate {
   id           String   @id @default(cuid())
+  userId       String   @map("user_id")
   visitDraftId String   @map("visit_draft_id")
   materialId   String   @map("material_id")
   amount       Decimal  @db.Decimal(10, 2)
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
 
-  visitDraft VisitDraft @relation(fields: [visitDraftId], references: [id], onDelete: Cascade)
-  material   Material   @relation(fields: [materialId], references: [id], onDelete: Restrict)
+  visitDraft VisitDraft @relation(fields: [visitDraftId, userId], references: [id, userId], onDelete: Cascade)
+  material   Material   @relation(fields: [materialId, userId], references: [id, userId], onDelete: Restrict)
 
-  @@index([visitDraftId])
-  @@index([materialId])
+  @@index([visitDraftId, userId])
+  @@index([materialId, userId])
   @@map("material_estimates")
 }

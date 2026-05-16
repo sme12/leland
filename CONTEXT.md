@@ -91,7 +91,7 @@ _Avoid_: Usage, consumption, line, charge.
 - A **Customer** has many **Visits**. A **Visit** belongs to exactly one **Customer** and exactly one **Service**.
 - A **Visit** has many **VisitLineItems**. Each **VisitLineItem** references exactly one **Material**.
 - A **Customer** has many **Visit Drafts**. A **Visit Draft** belongs to exactly one **Customer** and exactly one **Service**.
-- A **Visit Draft** may later become one **Visit** once its date is no longer in the future. Until then, it is not a **Visit**, does not change **Stock**, and has an **Estimated Price** rather than a price charged.
+- A **Visit Draft** remains a draft until published, at which point it becomes a **Visit**, affects **Stock**, and its **Estimated Price** is converted to a charged price.
 - When a **Visit Draft** becomes a **Visit**, its **Material Estimates** become **VisitLineItems** with costs locked at that moment.
 - A **Visit Draft** has many **Material Estimates**. Each **Material Estimate** references exactly one **Material**.
 - A **Receipt** is _not_ a Leland entity; an **Import** translates it into many **Purchases** (and possibly some new **Materials**).

@@ -164,7 +164,18 @@ function EditVisitDraftRoute() {
     },
   });
   const discardMutation = useMutation({
-    mutationFn: () => discardVisitDraftFn({ data: { id: draftId } }),
+    mutationFn: () => {
+      if (!draftQuery.data) {
+        throw new Error('visitDraft.notFound');
+      }
+
+      return discardVisitDraftFn({
+        data: {
+          id: draftId,
+          expectedUpdatedAt: draftQuery.data.updatedAt,
+        },
+      });
+    },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: visitKeys.root });
       queryClient.removeQueries({
@@ -213,19 +224,24 @@ function EditVisitDraftRoute() {
     !servicesQuery.isError &&
     !materialsQuery.isError &&
     hasFormData;
-  const isSaveDisabled =
-    saveMutation.isPending || saveMissingKeys.length > 0 || !isReady;
-  const isPublishDisabled =
-    publishMutation.isPending ||
+  const anyMutationPending =
     saveMutation.isPending ||
-    publishMissingKeys.length > 0 ||
-    !isReady;
+    publishMutation.isPending ||
+    discardMutation.isPending;
+  const isSaveDisabled =
+    anyMutationPending || saveMissingKeys.length > 0 || !isReady;
+  const isPublishDisabled =
+    anyMutationPending || publishMissingKeys.length > 0 || !isReady;
   const formMessageKey =
     publishMissingKeys[0] ??
     (isPublishDisabled ? saveMissingKeys[0] : undefined);
 
   function confirmDiscard() {
-    if (draftQuery.data && window.confirm(t('visit.confirmDiscardDraft'))) {
+    if (
+      !anyMutationPending &&
+      draftQuery.data &&
+      window.confirm(t('visit.confirmDiscardDraft'))
+    ) {
       discardMutation.mutate();
     }
   }
@@ -284,7 +300,7 @@ function EditVisitDraftRoute() {
                 <button
                   type="button"
                   onClick={confirmDiscard}
-                  disabled={discardMutation.isPending}
+                  disabled={anyMutationPending || !isReady}
                   className="inline-flex h-11 items-center gap-2 rounded-md border border-border px-4 text-sm font-semibold text-danger outline-none transition hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   <Trash2 aria-hidden="true" className="size-4" />

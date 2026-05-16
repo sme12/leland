@@ -430,10 +430,9 @@ export const createVisitDraft = createServerFn({ method: 'POST' })
       });
 
       if (data.items.length > 0) {
-        // material_estimates has no user_id column; ownership is enforced
-        // transitively via the just-created scoped draft row.
         await tx.materialEstimate.createMany({
           data: data.items.map((item) => ({
+            userId,
             visitDraftId: draft.id,
             materialId: item.materialId,
             amount: item.amount,
@@ -524,10 +523,9 @@ export const updateVisitDraft = createServerFn({ method: 'POST' })
         throw new Error('visitDraft.concurrentModification');
       }
 
-      // material_estimates has no user_id column. The draft was verified
-      // through the scoped client, so the child rows are safe to update here.
       await tx.materialEstimate.deleteMany({
         where: {
+          userId,
           visitDraftId: data.id,
           ...(retainedIds.length > 0 ? { id: { notIn: retainedIds } } : {}),
         },
@@ -536,7 +534,7 @@ export const updateVisitDraft = createServerFn({ method: 'POST' })
       for (const item of nextEstimates) {
         if (item.id) {
           await tx.materialEstimate.updateMany({
-            where: { id: item.id, visitDraftId: data.id },
+            where: { id: item.id, userId, visitDraftId: data.id },
             data: {
               materialId: item.materialId,
               amount: item.amount,
@@ -545,6 +543,7 @@ export const updateVisitDraft = createServerFn({ method: 'POST' })
         } else {
           await tx.materialEstimate.create({
             data: {
+              userId,
               visitDraftId: data.id,
               materialId: item.materialId,
               amount: item.amount,
@@ -592,7 +591,9 @@ export const discardVisitDraft = createServerFn({ method: 'POST' })
     const { getScopedDb } = await import('./db');
     const userId = await requireServerUserId();
     const db = getScopedDb(userId);
-    const result = await db.visitDraft.deleteMany({ where: { id: data.id } });
+    const result = await db.visitDraft.deleteMany({
+      where: { id: data.id, updatedAt: new Date(data.expectedUpdatedAt) },
+    });
 
     if (result.count === 0) {
       throw new Error('visitDraft.notFound');

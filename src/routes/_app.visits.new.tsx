@@ -10,7 +10,7 @@ import {
 import { useServerFn } from '@tanstack/react-start';
 import Decimal from 'decimal.js';
 import { ArrowLeft, Save } from 'lucide-react';
-import { useMemo } from 'react';
+import { useMemo, useRef } from 'react';
 import {
   FormProvider,
   useForm,
@@ -72,6 +72,7 @@ function NewVisitFormScreen() {
   const queryClient = useQueryClient();
   const toast = Toast.useToastManager();
   const form = useFormContext<VisitFormValues>();
+  const submitLockRef = useRef(false);
   const listCustomersFn = useServerFn(listCustomers);
   const listServicesFn = useServerFn(listServices);
   const listMaterialsForPickerFn = useServerFn(listMaterialsForPicker);
@@ -207,14 +208,50 @@ function NewVisitFormScreen() {
     Boolean(customersQuery.data) &&
     Boolean(servicesQuery.data) &&
     Boolean(materialsQuery.data);
+  const isAnyPending = mutation.isPending || draftMutation.isPending;
   const isSubmitDisabled =
-    !isReady || mutation.isPending || visitMissingKeys.length > 0;
+    !isReady || isAnyPending || visitMissingKeys.length > 0;
   const isDraftSubmitDisabled =
-    !isReady || draftMutation.isPending || draftMissingKeys.length > 0;
+    !isReady || isAnyPending || draftMissingKeys.length > 0;
   const hintKey =
     visitMissingKeys.length === 0 || draftMissingKeys.length === 0
       ? undefined
       : visitMissingKeys[0];
+
+  function hasActiveSubmission() {
+    return isAnyPending || submitLockRef.current;
+  }
+
+  function releaseSubmitLock() {
+    submitLockRef.current = false;
+  }
+
+  function submitVisit(formValues: VisitFormValues) {
+    if (hasActiveSubmission()) {
+      return;
+    }
+
+    submitLockRef.current = true;
+    mutation.mutate(
+      { ...formValues, recordType: 'visit' },
+      { onSettled: releaseSubmitLock },
+    );
+  }
+
+  function submitDraft(formValues: VisitFormValues) {
+    if (hasActiveSubmission()) {
+      return;
+    }
+
+    submitLockRef.current = true;
+    draftMutation.mutate(
+      {
+        ...formValues,
+        recordType: 'draft',
+      },
+      { onSettled: releaseSubmitLock },
+    );
+  }
 
   return (
     <main className="mx-auto w-full max-w-2xl px-4 py-8">
@@ -234,9 +271,7 @@ function NewVisitFormScreen() {
         id="new-visit-form"
         className="mt-6"
         onKeyDown={preventImplicitSubmit}
-        onSubmit={form.handleSubmit((formValues) =>
-          mutation.mutate({ ...formValues, recordType: 'visit' }),
-        )}
+        onSubmit={form.handleSubmit(submitVisit)}
       >
         {isLoading ? (
           <p className="rounded-md border border-border bg-surface p-4 text-sm text-muted-foreground">
@@ -298,12 +333,7 @@ function NewVisitFormScreen() {
               disabled={isDraftSubmitDisabled}
               onClick={() => {
                 form.setValue('recordType', 'draft', { shouldDirty: false });
-                void form.handleSubmit((formValues) =>
-                  draftMutation.mutate({
-                    ...formValues,
-                    recordType: 'draft',
-                  }),
-                )();
+                void form.handleSubmit(submitDraft)();
               }}
               className="inline-flex h-11 items-center gap-2 rounded-md border border-border px-4 text-sm font-semibold outline-none transition hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-60"
             >
