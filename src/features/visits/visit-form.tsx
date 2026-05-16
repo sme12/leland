@@ -21,6 +21,7 @@ import {
   visitCreateSchema,
   visitUpdateSchema,
 } from '#/shared/schemas/visit';
+import { moneyStringSchema } from '#/shared/schemas/decimal';
 import { isFutureHelsinkiDate } from '#/shared/date';
 import { formatEuro } from '#/shared/purchase-format';
 
@@ -531,10 +532,15 @@ export function computeVisitPreviewCost(values: VisitFormFields) {
 
 export function getVisitFormMissingKeys(values: VisitFormFields) {
   const missing: Array<string> = [];
+  const priceCharged = values.priceCharged.trim();
 
   if (!values.customerId) missing.push('visit.missing.customer');
   if (!values.serviceId) missing.push('visit.missing.service');
-  if (!values.priceCharged) missing.push('visit.missing.priceCharged');
+  if (!priceCharged) {
+    missing.push('visit.missing.priceCharged');
+  } else if (!moneyStringSchema.safeParse(priceCharged).success) {
+    missing.push('validation.money');
+  }
   if (values.date && isFutureHelsinkiDate(values.date)) {
     missing.push('visit.missing.dateFuture');
   }

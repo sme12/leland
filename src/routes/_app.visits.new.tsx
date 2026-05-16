@@ -36,7 +36,7 @@ import { listCustomers } from '#/server/customers';
 import { listServices } from '#/server/services';
 import { createVisit, listMaterialsForPicker } from '#/server/visits';
 import type { VisitDto } from '#/server/visits';
-import { formatEuro } from '#/shared/purchase-format';
+import { formatEuro, tryFormatEuro } from '#/shared/purchase-format';
 
 export const Route = createFileRoute('/_app/visits/new')({
   component: NewVisitRoute,
@@ -239,7 +239,8 @@ function NewVisitFormScreen() {
                 </span>{' '}
                 <strong>
                   {values.priceCharged
-                    ? formatEuro(values.priceCharged, i18n.language)
+                    ? (tryFormatEuro(values.priceCharged, i18n.language) ??
+                      values.priceCharged)
                     : '—'}
                 </strong>
               </span>

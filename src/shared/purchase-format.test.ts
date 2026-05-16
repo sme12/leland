@@ -4,6 +4,7 @@ import {
   computeContainerTotalQuantity,
   computePurchaseUnitCost,
   formatUnitCost,
+  tryFormatEuro,
 } from './purchase-format';
 
 describe('purchase formatting and arithmetic', () => {
@@ -29,5 +30,9 @@ describe('purchase formatting and arithmetic', () => {
   it('formats unit cost with adaptive precision', () => {
     expect(formatUnitCost('0.1234', 'en-US')).toBe('€0.1234');
     expect(formatUnitCost('2.5', 'en-US')).toBe('€2.50');
+  });
+
+  it('returns null when draft money cannot be formatted', () => {
+    expect(tryFormatEuro('not-a-number', 'en-US')).toBeNull();
   });
 });

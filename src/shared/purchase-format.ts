@@ -33,6 +33,18 @@ export function formatEuro(
   }).format(new Decimal(value).toNumber());
 }
 
+export function tryFormatEuro(
+  value: string | Decimal,
+  locale: string,
+  options: Intl.NumberFormatOptions = {},
+) {
+  try {
+    return formatEuro(value, locale, options);
+  } catch {
+    return null;
+  }
+}
+
 export function formatQuantity(
   value: string | Decimal,
   unitOfMeasure: UnitOfMeasure,
