@@ -27,30 +27,32 @@ enum UnitOfMeasure {
 }
 
 model Customer {
-  id         String   @id @default(cuid())
-  userId     String   @map("user_id")
-  name       String
-  comment    String?
-  isArchived Boolean  @default(false) @map("is_archived")
-  createdAt  DateTime @default(now()) @map("created_at")
-  updatedAt  DateTime @updatedAt @map("updated_at")
-  visits     Visit[]
+  id          String       @id @default(cuid())
+  userId      String       @map("user_id")
+  name        String
+  comment     String?
+  isArchived  Boolean      @default(false) @map("is_archived")
+  createdAt   DateTime     @default(now()) @map("created_at")
+  updatedAt   DateTime     @updatedAt @map("updated_at")
+  visits      Visit[]
+  visitDrafts VisitDraft[]
 
   @@index([userId, isArchived, name])
   @@map("customers")
 }
 
 model Material {
-  id            String           @id @default(cuid())
-  userId        String           @map("user_id")
+  id            String             @id @default(cuid())
+  userId        String             @map("user_id")
   name          String
-  unitOfMeasure UnitOfMeasure    @map("unit_of_measure")
+  unitOfMeasure UnitOfMeasure      @map("unit_of_measure")
   category      MaterialCategory
-  isArchived    Boolean          @default(false) @map("is_archived")
-  createdAt     DateTime         @default(now()) @map("created_at")
-  updatedAt     DateTime         @updatedAt @map("updated_at")
+  isArchived    Boolean            @default(false) @map("is_archived")
+  createdAt     DateTime           @default(now()) @map("created_at")
+  updatedAt     DateTime           @updatedAt @map("updated_at")
   purchases     Purchase[]
   lineItems     VisitLineItem[]
+  estimates     MaterialEstimate[]
 
   @@unique([userId, name, category, unitOfMeasure])
   @@index([userId, isArchived, category, name])
@@ -58,15 +60,16 @@ model Material {
 }
 
 model Service {
-  id           String   @id @default(cuid())
-  userId       String   @map("user_id")
+  id           String       @id @default(cuid())
+  userId       String       @map("user_id")
   name         String
-  defaultPrice Decimal? @map("default_price") @db.Decimal(10, 2)
-  displayOrder Int      @map("display_order")
-  isArchived   Boolean  @default(false) @map("is_archived")
-  createdAt    DateTime @default(now()) @map("created_at")
-  updatedAt    DateTime @updatedAt @map("updated_at")
+  defaultPrice Decimal?     @map("default_price") @db.Decimal(10, 2)
+  displayOrder Int          @map("display_order")
+  isArchived   Boolean      @default(false) @map("is_archived")
+  createdAt    DateTime     @default(now()) @map("created_at")
+  updatedAt    DateTime     @updatedAt @map("updated_at")
   visits       Visit[]
+  visitDrafts  VisitDraft[]
 
   @@unique([userId, name])
   @@unique([userId, displayOrder])
@@ -112,6 +115,27 @@ model Visit {
   @@map("visits")
 }
 
+model VisitDraft {
+  id             String   @id @default(cuid())
+  userId         String   @map("user_id")
+  customerId     String   @map("customer_id")
+  serviceId      String   @map("service_id")
+  date           DateTime @db.Date
+  estimatedPrice Decimal? @map("estimated_price") @db.Decimal(10, 2)
+  note           String?
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  customer          Customer           @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  service           Service            @relation(fields: [serviceId], references: [id], onDelete: Restrict)
+  materialEstimates MaterialEstimate[]
+
+  @@index([userId, date, createdAt])
+  @@index([userId, customerId, date])
+  @@index([userId, serviceId, date])
+  @@map("visit_drafts")
+}
+
 model VisitLineItem {
   id         String   @id @default(cuid())
   visitId    String   @map("visit_id")
@@ -128,4 +152,20 @@ model VisitLineItem {
   @@index([visitId])
   @@index([materialId])
   @@map("visit_line_items")
+}
+
+model MaterialEstimate {
+  id           String   @id @default(cuid())
+  visitDraftId String   @map("visit_draft_id")
+  materialId   String   @map("material_id")
+  amount       Decimal  @db.Decimal(10, 2)
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  visitDraft VisitDraft @relation(fields: [visitDraftId], references: [id], onDelete: Cascade)
+  material   Material   @relation(fields: [materialId], references: [id], onDelete: Restrict)
+
+  @@index([visitDraftId])
+  @@index([materialId])
+  @@map("material_estimates")
 }
