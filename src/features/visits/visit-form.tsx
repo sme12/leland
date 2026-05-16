@@ -147,7 +147,7 @@ export function VisitFormBody({
             : 'space-y-3 rounded-md border border-dashed border-border p-4 opacity-70'
         }
       >
-        <div className="flex items-center justify-between gap-3">
+        <div>
           <div>
             <h2 className="text-base font-semibold">
               {t('visit.materialsTitle')}
@@ -158,15 +158,6 @@ export function VisitFormBody({
               </p>
             ) : null}
           </div>
-          <button
-            type="button"
-            disabled={!customerId}
-            onClick={() => append({ materialId: '', amount: '', unitCost: '' })}
-            className="inline-flex h-10 items-center gap-2 rounded-md border border-border px-3 text-sm font-semibold outline-none hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            <Plus aria-hidden="true" className="size-4" />
-            {t('visit.addMaterial')}
-          </button>
         </div>
 
         {fields.length === 0 ? (
@@ -187,6 +178,16 @@ export function VisitFormBody({
             ))}
           </div>
         )}
+
+        <button
+          type="button"
+          disabled={!customerId}
+          onClick={() => append({ materialId: '', amount: '', unitCost: '' })}
+          className="inline-flex h-10 items-center gap-2 rounded-md border border-border px-3 text-sm font-semibold outline-none hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          <Plus aria-hidden="true" className="size-4" />
+          {t('visit.addMaterial')}
+        </button>
       </section>
 
       <PickerSheet
