@@ -47,7 +47,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
       <head>
         <HeadContent />
       </head>
-      <body>
+      <body suppressHydrationWarning>
         <ClerkProvider>
           <I18nextProvider i18n={appI18n}>
             <div className="app-root min-h-dvh bg-background text-foreground">
