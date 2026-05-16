@@ -19,6 +19,7 @@ type MaterialWhere = Prisma.MaterialWhereInput;
 type PurchaseWhere = Prisma.PurchaseWhereInput;
 type ServiceWhere = Prisma.ServiceWhereInput;
 type VisitWhere = Prisma.VisitWhereInput;
+type VisitDraftWhere = Prisma.VisitDraftWhereInput;
 
 function scopedCustomerWhere(userId: string, where?: CustomerWhere) {
   return {
@@ -45,6 +46,12 @@ function scopedServiceWhere(userId: string, where?: ServiceWhere) {
 }
 
 function scopedVisitWhere(userId: string, where?: VisitWhere) {
+  return {
+    AND: [{ userId }, where ?? {}],
+  };
+}
+
+function scopedVisitDraftWhere(userId: string, where?: VisitDraftWhere) {
   return {
     AND: [{ userId }, where ?? {}],
   };
@@ -238,6 +245,40 @@ export function getScopedDb(userId: string, client: DbClient = prisma) {
         client.visit.deleteMany({
           ...args,
           where: scopedVisitWhere(userId, args.where),
+        }),
+    },
+    visitDraft: {
+      findMany: (args: Prisma.VisitDraftFindManyArgs = {}) =>
+        client.visitDraft.findMany({
+          ...args,
+          where: scopedVisitDraftWhere(userId, args.where),
+        }),
+      findFirst: (args: Prisma.VisitDraftFindFirstArgs = {}) =>
+        client.visitDraft.findFirst({
+          ...args,
+          where: scopedVisitDraftWhere(userId, args.where),
+        }),
+      create: (
+        args: Omit<Prisma.VisitDraftCreateArgs, 'data'> & {
+          data: Omit<
+            Prisma.VisitDraftUncheckedCreateInput,
+            'userId' | 'materialEstimates'
+          >;
+        },
+      ) =>
+        client.visitDraft.create({
+          ...args,
+          data: { ...args.data, userId },
+        }),
+      updateMany: (args: Prisma.VisitDraftUpdateManyArgs) =>
+        client.visitDraft.updateMany({
+          ...args,
+          where: scopedVisitDraftWhere(userId, args.where),
+        }),
+      deleteMany: (args: Prisma.VisitDraftDeleteManyArgs = {}) =>
+        client.visitDraft.deleteMany({
+          ...args,
+          where: scopedVisitDraftWhere(userId, args.where),
         }),
     },
   };

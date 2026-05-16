@@ -186,6 +186,7 @@ function EditVisitRoute() {
             >
               <VisitFormBody
                 mode="edit"
+                recordType="visit"
                 customers={customers}
                 materials={materials}
                 services={services}
@@ -216,6 +217,7 @@ function EditVisitRoute() {
 
 function toVisitFormValues(visit: VisitDto): VisitFormFields {
   return {
+    recordType: 'visit',
     id: visit.id,
     date: visit.date,
     customerId: visit.customerId,

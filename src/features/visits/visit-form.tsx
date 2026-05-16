@@ -21,11 +21,16 @@ import {
   visitCreateSchema,
   visitUpdateSchema,
 } from '#/shared/schemas/visit';
+import {
+  visitDraftCreateSchema,
+  visitDraftUpdateSchema,
+} from '#/shared/schemas/visit-draft';
 import { moneyStringSchema } from '#/shared/schemas/decimal';
-import { isFutureHelsinkiDate } from '#/shared/date';
+import { isFutureHelsinkiDate, isPastHelsinkiDate } from '#/shared/date';
 import { formatEuro } from '#/shared/purchase-format';
 
 export type VisitFormMode = 'create' | 'edit';
+export type VisitRecordType = 'visit' | 'draft';
 
 export type VisitLineItemFormFields = {
   id?: string;
@@ -35,6 +40,7 @@ export type VisitLineItemFormFields = {
 };
 
 export type VisitFormFields = {
+  recordType: VisitRecordType;
   id?: string;
   date: string;
   customerId: string;
@@ -46,6 +52,7 @@ export type VisitFormFields = {
 
 type VisitFormBodyProps = {
   mode: VisitFormMode;
+  recordType: VisitRecordType;
   customers: Array<CustomerOption>;
   materials: Array<VisitMaterialPickerDto>;
   services: Array<ServiceDto>;
@@ -60,6 +67,7 @@ type CustomerOption = Pick<
 
 export function VisitFormBody({
   mode,
+  recordType,
   customers,
   materials,
   services,
@@ -84,16 +92,16 @@ export function VisitFormBody({
   });
   const items = useWatch({ control: form.control, name: 'items' });
   const priceSuggestion = useMemo(() => {
-    if (mode !== 'create') {
-      return null;
-    }
-
     return getVisitPriceSuggestion({
       currentPriceCharged: priceCharged,
       serviceDefaultPrice: selectedService?.defaultPrice ?? null,
       items,
     });
-  }, [items, mode, priceCharged, selectedService?.defaultPrice]);
+  }, [items, priceCharged, selectedService?.defaultPrice]);
+  const priceLabel =
+    recordType === 'draft'
+      ? t('visit.fields.estimatedPrice')
+      : t('visit.fields.priceCharged');
 
   return (
     <div className="space-y-6 pb-28">
@@ -170,6 +178,7 @@ export function VisitFormBody({
               <VisitLineItemRow
                 key={field.id}
                 index={index}
+                recordType={recordType}
                 materials={materials}
                 disabled={!customerId}
                 onRemove={() => remove(index)}
@@ -213,11 +222,6 @@ export function VisitFormBody({
           const isChargedDirty = Boolean(
             form.formState.dirtyFields.priceCharged,
           );
-          const nextCharged = getServicePrefillValue({
-            currentValue: form.getValues('priceCharged'),
-            defaultPrice: service.defaultPrice,
-            isDirty: isChargedDirty || mode === 'edit',
-          });
 
           form.setValue('serviceId', service.id, {
             shouldDirty: true,
@@ -225,6 +229,12 @@ export function VisitFormBody({
           });
 
           if (!isChargedDirty && mode === 'create') {
+            const nextCharged = getServicePrefillValue({
+              currentValue: form.getValues('priceCharged'),
+              defaultPrice: service.defaultPrice,
+              isDirty: false,
+            });
+
             form.setValue('priceCharged', nextCharged, {
               shouldDirty: false,
               shouldValidate: true,
@@ -235,9 +245,7 @@ export function VisitFormBody({
 
       <div>
         <label className="block">
-          <span className="text-sm font-medium">
-            {t('visit.fields.priceCharged')}
-          </span>
+          <span className="text-sm font-medium">{priceLabel}</span>
           <input
             {...form.register('priceCharged')}
             inputMode="decimal"
@@ -291,12 +299,14 @@ export function VisitFormBody({
 
 function VisitLineItemRow({
   index,
+  recordType,
   materials,
   disabled,
   onRemove,
   onBuyFirst,
 }: {
   index: number;
+  recordType: VisitRecordType;
   materials: Array<VisitMaterialPickerDto>;
   disabled: boolean;
   onRemove: () => void;
@@ -368,16 +378,22 @@ function VisitLineItemRow({
             selectedId={materialId}
             disabled={disabled}
             getOptionLabel={(material) => material.name}
-            isOptionDisabled={(material) => !material.hasPurchases}
-            renderDisabledAction={(material) => (
-              <button
-                type="button"
-                onClick={() => onBuyFirst(material.id)}
-                className="shrink-0 rounded-md border border-border px-2 py-1 text-xs font-semibold outline-none hover:bg-background focus-visible:ring-2 focus-visible:ring-ring"
-              >
-                {t('visit.buyFirst')}
-              </button>
-            )}
+            isOptionDisabled={(material) =>
+              recordType === 'visit' && !material.hasPurchases
+            }
+            renderDisabledAction={
+              recordType === 'visit'
+                ? (material) => (
+                    <button
+                      type="button"
+                      onClick={() => onBuyFirst(material.id)}
+                      className="shrink-0 rounded-md border border-border px-2 py-1 text-xs font-semibold outline-none hover:bg-background focus-visible:ring-2 focus-visible:ring-ring"
+                    >
+                      {t('visit.buyFirst')}
+                    </button>
+                  )
+                : undefined
+            }
             renderOption={(material) => (
               <span className="block min-w-0">
                 <span className="block truncate font-medium">
@@ -449,8 +465,16 @@ function VisitLineItemRow({
 }
 
 export const visitFormResolver: Resolver<VisitFormFields> = (values) => {
-  const schema = values.id ? visitUpdateSchema : visitCreateSchema;
-  const result = schema.safeParse(toVisitValidationInput(values));
+  const recordType = values.recordType;
+  const schema =
+    recordType === 'draft'
+      ? values.id
+        ? visitDraftUpdateSchema
+        : visitDraftCreateSchema
+      : values.id
+        ? visitUpdateSchema
+        : visitCreateSchema;
+  const result = schema.safeParse(toVisitValidationInput(values, recordType));
 
   if (result.success) {
     return {
@@ -463,14 +487,33 @@ export const visitFormResolver: Resolver<VisitFormFields> = (values) => {
     values: {},
     errors: Object.fromEntries(
       result.error.issues.map((issue) => [
-        issue.path.join('.'),
+        issue.path
+          .map((segment) =>
+            segment === 'estimatedPrice' ? 'priceCharged' : segment,
+          )
+          .join('.'),
         { type: issue.code, message: issue.message },
       ]),
     ),
   };
 };
 
-function toVisitValidationInput(values: VisitFormFields) {
+function toVisitValidationInput(
+  values: VisitFormFields,
+  recordType: VisitRecordType,
+) {
+  if (recordType === 'draft') {
+    return {
+      ...(values.id ? { id: values.id } : {}),
+      customerId: values.customerId,
+      serviceId: values.serviceId,
+      date: values.date,
+      estimatedPrice: values.priceCharged,
+      note: values.note,
+      items: toDraftItems(values),
+    };
+  }
+
   return {
     ...(values.id ? { id: values.id } : {}),
     customerId: values.customerId,
@@ -486,8 +529,11 @@ function toVisitValidationInput(values: VisitFormFields) {
   };
 }
 
-export function createEmptyVisitFormValues(): VisitFormFields {
+export function createEmptyVisitFormValues(
+  recordType: VisitRecordType = 'visit',
+): VisitFormFields {
   return {
+    recordType,
     date: createDefaultVisitDate(),
     customerId: '',
     serviceId: '',
@@ -517,6 +563,28 @@ export function toVisitMutationInput(values: VisitFormFields) {
   };
 }
 
+export function toVisitDraftMutationInput(values: VisitFormFields) {
+  return {
+    ...(values.id ? { id: values.id } : {}),
+    customerId: values.customerId,
+    serviceId: values.serviceId,
+    date: values.date,
+    estimatedPrice: values.priceCharged,
+    note: values.note,
+    items: toDraftItems(values),
+  };
+}
+
+function toDraftItems(values: VisitFormFields) {
+  return values.items
+    .filter((item) => item.materialId && isPositiveDecimal(item.amount))
+    .map((item) => ({
+      ...(item.id ? { id: item.id } : {}),
+      materialId: item.materialId,
+      amount: item.amount,
+    }));
+}
+
 export function computeVisitPreviewCost(values: VisitFormFields) {
   return values.items.reduce((total, item) => {
     try {
@@ -534,9 +602,23 @@ export function computeVisitPreviewCost(values: VisitFormFields) {
 export function getVisitFormMissingKeys(values: VisitFormFields) {
   const missing: Array<string> = [];
   const priceCharged = values.priceCharged.trim();
+  const recordType = values.recordType;
 
   if (!values.customerId) missing.push('visit.missing.customer');
   if (!values.serviceId) missing.push('visit.missing.service');
+  if (!values.date) missing.push('visit.missing.date');
+
+  if (recordType === 'draft') {
+    if (priceCharged && !moneyStringSchema.safeParse(priceCharged).success) {
+      missing.push('validation.money');
+    }
+    if (values.date && isPastHelsinkiDate(values.date)) {
+      missing.push('visit.missing.datePast');
+    }
+
+    return [...new Set(missing)];
+  }
+
   if (!priceCharged) {
     missing.push('visit.missing.priceCharged');
   } else if (!moneyStringSchema.safeParse(priceCharged).success) {
@@ -551,6 +633,22 @@ export function getVisitFormMissingKeys(values: VisitFormFields) {
     if (!isPositiveDecimal(item.amount)) {
       missing.push('visit.missing.amount');
     }
+  }
+
+  return [...new Set(missing)];
+}
+
+export function getVisitDraftPublishMissingKeys(values: VisitFormFields) {
+  const missing: Array<string> = [];
+  const estimatedPrice = values.priceCharged.trim();
+
+  if (!estimatedPrice) {
+    missing.push('visit.missing.estimatedPriceRequired');
+  } else if (!moneyStringSchema.safeParse(estimatedPrice).success) {
+    missing.push('validation.money');
+  }
+  if (values.date && isFutureHelsinkiDate(values.date)) {
+    missing.push('visit.missing.publishDateFuture');
   }
 
   return [...new Set(missing)];

@@ -1,7 +1,7 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { FormProvider, useForm } from 'react-hook-form';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import type * as ReactStart from '@tanstack/react-start';
 
 import { appI18n } from '#/i18n';
@@ -25,6 +25,10 @@ vi.mock('@tanstack/react-start', async (importOriginal) => {
     ...actual,
     useServerFn: () => vi.fn(),
   };
+});
+
+afterEach(() => {
+  cleanup();
 });
 
 describe('getVisitFormMissingKeys', () => {
@@ -60,32 +64,84 @@ describe('VisitFormBody', () => {
         Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();
   });
+
+  it('shows price suggestions in edit mode', async () => {
+    await appI18n.changeLanguage('en');
+
+    renderVisitFormBody({
+      mode: 'edit',
+      defaultValues: {
+        ...createEmptyVisitFormValues(),
+        id: 'visit-id',
+        customerId: 'customer-id',
+        serviceId: 'service-id',
+      },
+    });
+
+    expect(screen.getByText('Suggested €30.00')).toBeTruthy();
+  });
+
+  it('uses estimated price wording for draft forms', async () => {
+    await appI18n.changeLanguage('en');
+
+    renderVisitFormBody({
+      recordType: 'draft',
+      defaultValues: {
+        ...createEmptyVisitFormValues('draft'),
+        customerId: 'customer-id',
+      },
+    });
+
+    expect(screen.getByText('Estimated price')).toBeTruthy();
+    expect(screen.queryByText('Charged')).toBeNull();
+  });
 });
 
-function renderVisitFormBody() {
+function renderVisitFormBody({
+  mode = 'create',
+  recordType = 'visit',
+  defaultValues = {
+    ...createEmptyVisitFormValues(recordType),
+    customerId: 'customer-id',
+  },
+}: {
+  mode?: 'create' | 'edit';
+  recordType?: 'visit' | 'draft';
+  defaultValues?: VisitFormFields;
+} = {}) {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   });
 
   render(
     <QueryClientProvider client={queryClient}>
-      <VisitFormHarness />
+      <VisitFormHarness
+        mode={mode}
+        recordType={recordType}
+        defaultValues={defaultValues}
+      />
     </QueryClientProvider>,
   );
 }
 
-function VisitFormHarness() {
+function VisitFormHarness({
+  mode,
+  recordType,
+  defaultValues,
+}: {
+  mode: 'create' | 'edit';
+  recordType: 'visit' | 'draft';
+  defaultValues: VisitFormFields;
+}) {
   const form = useForm<VisitFormFields>({
-    defaultValues: {
-      ...createEmptyVisitFormValues(),
-      customerId: 'customer-id',
-    },
+    defaultValues,
   });
 
   return (
     <FormProvider {...form}>
       <VisitFormBody
-        mode="create"
+        mode={mode}
+        recordType={recordType}
         customers={[
           {
             id: 'customer-id',
