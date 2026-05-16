@@ -26,6 +26,7 @@ import {
   computeVisitPreviewCost,
   createEmptyVisitFormValues,
   getVisitFormMissingKeys,
+  toVisitDraftMutationInput,
   toVisitMutationInput,
   visitFormResolver,
   VisitFormBody,
@@ -34,8 +35,12 @@ import type { VisitFormFields as VisitFormValues } from '#/features/visits/visit
 import { visitKeys } from '#/features/visits/visit-queries';
 import { listCustomers } from '#/server/customers';
 import { listServices } from '#/server/services';
-import { createVisit, listMaterialsForPicker } from '#/server/visits';
-import type { VisitDto } from '#/server/visits';
+import {
+  createVisit,
+  createVisitDraft,
+  listMaterialsForPicker,
+} from '#/server/visits';
+import type { VisitOrDraftListRowDto } from '#/server/visits';
 import { formatEuro, tryFormatEuro } from '#/shared/purchase-format';
 
 export const Route = createFileRoute('/_app/visits/new')({
@@ -71,9 +76,17 @@ function NewVisitFormScreen() {
   const listServicesFn = useServerFn(listServices);
   const listMaterialsForPickerFn = useServerFn(listMaterialsForPicker);
   const createVisitFn = useServerFn(createVisit);
+  const createVisitDraftFn = useServerFn(createVisitDraft);
   const values = useWatch({ control: form.control }) as VisitFormValues;
   const previewCost = useMemo(() => computeVisitPreviewCost(values), [values]);
-  const missingKeys = useMemo(() => getVisitFormMissingKeys(values), [values]);
+  const visitMissingKeys = useMemo(
+    () => getVisitFormMissingKeys({ ...values, recordType: 'visit' }),
+    [values],
+  );
+  const draftMissingKeys = useMemo(
+    () => getVisitFormMissingKeys({ ...values, recordType: 'draft' }),
+    [values],
+  );
   const customersQuery = useQuery({
     queryKey: customerKeys.list(userKey, false),
     queryFn: () => listCustomersFn({ data: { archived: false } }),
@@ -97,7 +110,7 @@ function NewVisitFormScreen() {
       createVisitFn({ data: toVisitMutationInput(formValues) }),
     onMutate: async (formValues) => {
       await queryClient.cancelQueries({ queryKey: visitKeys.list(userKey) });
-      const previous = queryClient.getQueryData<Array<VisitDto>>(
+      const previous = queryClient.getQueryData<Array<VisitOrDraftListRowDto>>(
         visitKeys.list(userKey),
       );
       const customer = customersQuery.data?.find(
@@ -109,7 +122,8 @@ function NewVisitFormScreen() {
       const optimisticId = `pending-${Date.now()}`;
 
       if (customer && service) {
-        const optimistic: VisitDto & { isPending: boolean } = {
+        const optimistic: VisitOrDraftListRowDto & { isPending: boolean } = {
+          recordType: 'visit',
           id: optimisticId,
           customerId: customer.id,
           serviceId: service.id,
@@ -129,10 +143,10 @@ function NewVisitFormScreen() {
           isPending: true,
         };
 
-        queryClient.setQueryData<Array<VisitDto>>(visitKeys.list(userKey), [
-          optimistic,
-          ...(previous ?? []),
-        ]);
+        queryClient.setQueryData<Array<VisitOrDraftListRowDto>>(
+          visitKeys.list(userKey),
+          [optimistic, ...(previous ?? [])],
+        );
       }
 
       await navigate({ to: '/visits' });
@@ -140,11 +154,13 @@ function NewVisitFormScreen() {
       return { previous, optimisticId };
     },
     onSuccess: async (visit, _variables, context) => {
-      queryClient.setQueryData<Array<VisitDto>>(
+      queryClient.setQueryData<Array<VisitOrDraftListRowDto>>(
         visitKeys.list(userKey),
         (current) =>
           (current ?? []).map((item) =>
-            item.id === context.optimisticId ? visit : item,
+            item.id === context.optimisticId
+              ? { ...visit, recordType: 'visit' }
+              : item,
           ),
       );
       await queryClient.invalidateQueries({ queryKey: visitKeys.root });
@@ -165,6 +181,20 @@ function NewVisitFormScreen() {
       }
     },
   });
+  const draftMutation = useMutation({
+    mutationFn: (formValues: VisitFormValues) =>
+      createVisitDraftFn({ data: toVisitDraftMutationInput(formValues) }),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: visitKeys.root });
+      await navigate({ to: '/visits' });
+    },
+    onError: (error) => {
+      toast.add({
+        title: t('visit.saveDraftFailed'),
+        description: error.message,
+      });
+    },
+  });
   const isLoading =
     customersQuery.isPending ||
     servicesQuery.isPending ||
@@ -178,7 +208,9 @@ function NewVisitFormScreen() {
     Boolean(servicesQuery.data) &&
     Boolean(materialsQuery.data);
   const isSubmitDisabled =
-    !isReady || mutation.isPending || missingKeys.length > 0;
+    !isReady || mutation.isPending || visitMissingKeys.length > 0;
+  const isDraftSubmitDisabled =
+    !isReady || draftMutation.isPending || draftMissingKeys.length > 0;
 
   return (
     <main className="mx-auto w-full max-w-2xl px-4 py-8">
@@ -199,7 +231,7 @@ function NewVisitFormScreen() {
         className="mt-6"
         onKeyDown={preventImplicitSubmit}
         onSubmit={form.handleSubmit((formValues) =>
-          mutation.mutate(formValues),
+          mutation.mutate({ ...formValues, recordType: 'visit' }),
         )}
       >
         {isLoading ? (
@@ -213,6 +245,7 @@ function NewVisitFormScreen() {
         ) : (
           <VisitFormBody
             mode="create"
+            recordType="visit"
             customers={customersQuery.data}
             materials={materialsQuery.data}
             services={servicesQuery.data}
@@ -251,21 +284,43 @@ function NewVisitFormScreen() {
                 <strong>{formatEuro(previewCost, i18n.language)}</strong>
               </span>
             </div>
-            {missingKeys[0] ? (
+            {visitMissingKeys[0] ? (
               <p className="mt-1 text-xs text-muted-foreground">
-                {t(missingKeys[0])}
+                {t(visitMissingKeys[0])}
               </p>
             ) : null}
           </div>
-          <button
-            type="submit"
-            form="new-visit-form"
-            disabled={isSubmitDisabled}
-            className="inline-flex h-11 shrink-0 items-center gap-2 rounded-md bg-foreground px-4 text-sm font-semibold text-background outline-none transition hover:opacity-90 focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            <Save aria-hidden="true" className="size-4" />
-            {t('visit.save')}
-          </button>
+          <div className="flex shrink-0 flex-wrap justify-end gap-2">
+            <button
+              type="button"
+              disabled={isDraftSubmitDisabled}
+              onClick={() => {
+                form.setValue('recordType', 'draft', { shouldDirty: false });
+                void form.handleSubmit((formValues) =>
+                  draftMutation.mutate({
+                    ...formValues,
+                    recordType: 'draft',
+                  }),
+                )();
+              }}
+              className="inline-flex h-11 items-center gap-2 rounded-md border border-border px-4 text-sm font-semibold outline-none transition hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              <Save aria-hidden="true" className="size-4" />
+              {t('visit.saveDraft')}
+            </button>
+            <button
+              type="submit"
+              form="new-visit-form"
+              disabled={isSubmitDisabled}
+              onClick={() =>
+                form.setValue('recordType', 'visit', { shouldDirty: false })
+              }
+              className="inline-flex h-11 items-center gap-2 rounded-md bg-foreground px-4 text-sm font-semibold text-background outline-none transition hover:opacity-90 focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              <Save aria-hidden="true" className="size-4" />
+              {t('visit.save')}
+            </button>
+          </div>
         </div>
       </div>
     </main>

@@ -38,6 +38,7 @@ import { Route as AppPurchasesPurchaseIdEditRouteImport } from './routes/_app.pu
 import { Route as AppMaterialsMaterialIdEditRouteImport } from './routes/_app.materials.$materialId.edit'
 import { Route as AppCustomersCustomerIdEditRouteImport } from './routes/_app.customers.$customerId.edit'
 import { Route as AppVisitsNewCustomerNewRouteImport } from './routes/_app.visits.new.customer.new'
+import { Route as AppVisitsDraftsDraftIdEditRouteImport } from './routes/_app.visits.drafts.$draftId_.edit'
 
 const SignOutRoute = SignOutRouteImport.update({
   id: '/sign-out',
@@ -189,6 +190,12 @@ const AppVisitsNewCustomerNewRoute = AppVisitsNewCustomerNewRouteImport.update({
   path: '/customer/new',
   getParentRoute: () => AppVisitsNewRoute,
 } as any)
+const AppVisitsDraftsDraftIdEditRoute =
+  AppVisitsDraftsDraftIdEditRouteImport.update({
+    id: '/drafts/$draftId_/edit',
+    path: '/drafts/$draftId/edit',
+    getParentRoute: () => AppVisitsRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AppIndexRoute
@@ -218,6 +225,7 @@ export interface FileRoutesByFullPath {
   '/api/test/materials/$materialId': typeof ApiTestMaterialsMaterialIdRoute
   '/api/test/purchases/$purchaseId': typeof ApiTestPurchasesPurchaseIdRoute
   '/api/test/visits/$visitId': typeof ApiTestVisitsVisitIdRoute
+  '/visits/drafts/$draftId/edit': typeof AppVisitsDraftsDraftIdEditRoute
   '/visits/new/customer/new': typeof AppVisitsNewCustomerNewRoute
 }
 export interface FileRoutesByTo {
@@ -244,6 +252,7 @@ export interface FileRoutesByTo {
   '/api/test/materials/$materialId': typeof ApiTestMaterialsMaterialIdRoute
   '/api/test/purchases/$purchaseId': typeof ApiTestPurchasesPurchaseIdRoute
   '/api/test/visits/$visitId': typeof ApiTestVisitsVisitIdRoute
+  '/visits/drafts/$draftId/edit': typeof AppVisitsDraftsDraftIdEditRoute
   '/visits/new/customer/new': typeof AppVisitsNewCustomerNewRoute
 }
 export interface FileRoutesById {
@@ -276,6 +285,7 @@ export interface FileRoutesById {
   '/api/test/materials/$materialId': typeof ApiTestMaterialsMaterialIdRoute
   '/api/test/purchases/$purchaseId': typeof ApiTestPurchasesPurchaseIdRoute
   '/api/test/visits/$visitId': typeof ApiTestVisitsVisitIdRoute
+  '/_app/visits/drafts/$draftId_/edit': typeof AppVisitsDraftsDraftIdEditRoute
   '/_app/visits/new/customer/new': typeof AppVisitsNewCustomerNewRoute
 }
 export interface FileRouteTypes {
@@ -308,6 +318,7 @@ export interface FileRouteTypes {
     | '/api/test/materials/$materialId'
     | '/api/test/purchases/$purchaseId'
     | '/api/test/visits/$visitId'
+    | '/visits/drafts/$draftId/edit'
     | '/visits/new/customer/new'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -334,6 +345,7 @@ export interface FileRouteTypes {
     | '/api/test/materials/$materialId'
     | '/api/test/purchases/$purchaseId'
     | '/api/test/visits/$visitId'
+    | '/visits/drafts/$draftId/edit'
     | '/visits/new/customer/new'
   id:
     | '__root__'
@@ -365,6 +377,7 @@ export interface FileRouteTypes {
     | '/api/test/materials/$materialId'
     | '/api/test/purchases/$purchaseId'
     | '/api/test/visits/$visitId'
+    | '/_app/visits/drafts/$draftId_/edit'
     | '/_app/visits/new/customer/new'
   fileRoutesById: FileRoutesById
 }
@@ -583,6 +596,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppVisitsNewCustomerNewRouteImport
       parentRoute: typeof AppVisitsNewRoute
     }
+    '/_app/visits/drafts/$draftId_/edit': {
+      id: '/_app/visits/drafts/$draftId_/edit'
+      path: '/drafts/$draftId/edit'
+      fullPath: '/visits/drafts/$draftId/edit'
+      preLoaderRoute: typeof AppVisitsDraftsDraftIdEditRouteImport
+      parentRoute: typeof AppVisitsRoute
+    }
   }
 }
 
@@ -653,6 +673,7 @@ interface AppVisitsRouteChildren {
   AppVisitsNewRoute: typeof AppVisitsNewRouteWithChildren
   AppVisitsIndexRoute: typeof AppVisitsIndexRoute
   AppVisitsVisitIdEditRoute: typeof AppVisitsVisitIdEditRoute
+  AppVisitsDraftsDraftIdEditRoute: typeof AppVisitsDraftsDraftIdEditRoute
 }
 
 const AppVisitsRouteChildren: AppVisitsRouteChildren = {
@@ -660,6 +681,7 @@ const AppVisitsRouteChildren: AppVisitsRouteChildren = {
   AppVisitsNewRoute: AppVisitsNewRouteWithChildren,
   AppVisitsIndexRoute: AppVisitsIndexRoute,
   AppVisitsVisitIdEditRoute: AppVisitsVisitIdEditRoute,
+  AppVisitsDraftsDraftIdEditRoute: AppVisitsDraftsDraftIdEditRoute,
 }
 
 const AppVisitsRouteWithChildren = AppVisitsRoute._addFileChildren(

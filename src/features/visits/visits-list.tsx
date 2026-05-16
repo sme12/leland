@@ -6,27 +6,30 @@ import { CalendarDays, Plus } from 'lucide-react';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import type { VisitDto } from '#/server/visits';
-import { listVisits } from '#/server/visits';
+import type { VisitOrDraftListRowDto } from '#/server/visits';
+import { listVisitRows } from '#/server/visits';
 import { formatEuro } from '#/shared/purchase-format';
 import { visitKeys } from './visit-queries';
 
-type OptimisticVisit = VisitDto & { isPending?: boolean };
+type OptimisticVisitRow = VisitOrDraftListRowDto & { isPending?: boolean };
 
 export function VisitsList() {
   const { t, i18n } = useTranslation();
   const { user } = useUser();
   const userKey = user?.id ?? 'pending';
-  const listVisitsFn = useServerFn(listVisits);
+  const listVisitRowsFn = useServerFn(listVisitRows);
   const query = useQuery({
     queryKey: visitKeys.list(userKey),
-    queryFn: () => listVisitsFn(),
+    queryFn: () => listVisitRowsFn(),
     staleTime: 30_000,
     enabled: !!user,
   });
   const groups = useMemo(
     () =>
-      groupVisits((query.data ?? []) as Array<OptimisticVisit>, i18n.language),
+      groupVisits(
+        (query.data ?? []) as Array<OptimisticVisitRow>,
+        i18n.language,
+      ),
     [i18n.language, query.data],
   );
 
@@ -73,17 +76,33 @@ export function VisitsList() {
                   {group.label}
                 </h2>
                 <ul className="divide-y divide-border">
-                  {group.visits.map((visit) => (
-                    <li key={visit.id} data-visit-id={visit.id}>
-                      {visit.isPending ? (
-                        <VisitRow visit={visit} locale={i18n.language} />
+                  {group.visits.map((row) => (
+                    <li
+                      key={`${row.recordType}-${row.id}`}
+                      data-visit-id={
+                        row.recordType === 'visit' ? row.id : undefined
+                      }
+                      data-visit-draft-id={
+                        row.recordType === 'draft' ? row.id : undefined
+                      }
+                    >
+                      {row.isPending ? (
+                        <VisitRow row={row} locale={i18n.language} />
+                      ) : row.recordType === 'draft' ? (
+                        <Link
+                          to="/visits/drafts/$draftId/edit"
+                          params={{ draftId: row.id }}
+                          className="block outline-none hover:bg-muted/45 focus-visible:ring-2 focus-visible:ring-ring"
+                        >
+                          <VisitRow row={row} locale={i18n.language} />
+                        </Link>
                       ) : (
                         <Link
                           to="/visits/$visitId"
-                          params={{ visitId: visit.id }}
+                          params={{ visitId: row.id }}
                           className="block outline-none hover:bg-muted/45 focus-visible:ring-2 focus-visible:ring-ring"
                         >
-                          <VisitRow visit={visit} locale={i18n.language} />
+                          <VisitRow row={row} locale={i18n.language} />
                         </Link>
                       )}
                     </li>
@@ -99,42 +118,60 @@ export function VisitsList() {
 }
 
 function VisitRow({
-  visit,
+  row,
   locale,
 }: {
-  visit: OptimisticVisit;
+  row: OptimisticVisitRow;
   locale: string;
 }) {
   const { t } = useTranslation();
+  const isDraft = row.recordType === 'draft';
 
   return (
-    <div className="grid gap-3 p-4 sm:grid-cols-[1fr_auto] sm:items-center">
+    <div
+      className={`grid gap-3 p-4 sm:grid-cols-[1fr_auto] sm:items-center ${
+        isDraft ? 'border-l-4 border-l-ring bg-muted/20' : ''
+      }`}
+    >
       <span className="min-w-0">
         <span className="flex min-w-0 items-center gap-2 font-medium">
           <CalendarDays aria-hidden="true" className="size-4 shrink-0" />
-          <span className="truncate">{visit.customer.name}</span>
+          <span className="truncate">{row.customer.name}</span>
+          {isDraft ? (
+            <span className="shrink-0 rounded-md border border-border bg-surface px-2 py-0.5 text-xs font-semibold text-muted-foreground">
+              {t('visit.draftBadge')}
+            </span>
+          ) : null}
         </span>
         <span className="mt-1 block text-sm text-muted-foreground">
-          {formatVisitDate(visit.date, locale)}
+          {formatVisitDate(row.date, locale)}
         </span>
       </span>
       <span className="grid grid-cols-2 gap-3 text-sm sm:min-w-56">
         <span>
           <span className="block text-muted-foreground">
-            {t('visit.fields.priceCharged')}
+            {isDraft
+              ? t('visit.fields.estimatedPrice')
+              : t('visit.fields.priceCharged')}
           </span>
           <span className="font-semibold">
-            {formatEuro(visit.priceCharged, locale)}
+            {isDraft
+              ? row.estimatedPrice
+                ? formatEuro(row.estimatedPrice, locale)
+                : t('visit.noEstimatedPrice')
+              : formatEuro(row.priceCharged, locale)}
           </span>
         </span>
         <span>
           <span className="block text-muted-foreground">
-            {t('visit.fields.cost')}
+            {isDraft ? t('visit.fields.service') : t('visit.fields.cost')}
           </span>
           <span className="font-semibold">
-            {visit.isPending
-              ? t('visit.pendingCost')
-              : formatEuro(visit.totalCost, locale)}
+            {isDraft
+              ? t(row.service.name)
+              : row.isPending
+                ? t('visit.pendingCost')
+                : formatEuro(row.totalCost, locale)}
           </span>
         </span>
       </span>
@@ -142,10 +179,10 @@ function VisitRow({
   );
 }
 
-function groupVisits(visits: Array<OptimisticVisit>, locale: string) {
+function groupVisits(visits: Array<OptimisticVisitRow>, locale: string) {
   const groups = new Map<
     string,
-    { key: string; label: string; visits: Array<OptimisticVisit> }
+    { key: string; label: string; visits: Array<OptimisticVisitRow> }
   >();
 
   for (const visit of visits) {
