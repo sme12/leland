@@ -19,6 +19,7 @@ import {
 } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 
+import { preventImplicitSubmit } from '#/components/prevent-implicit-submit';
 import { customerKeys } from '#/features/customers/customer-queries';
 import {
   applyVisitServerError,
@@ -196,6 +197,7 @@ function NewVisitFormScreen() {
       <form
         id="new-visit-form"
         className="mt-6"
+        onKeyDown={preventImplicitSubmit}
         onSubmit={form.handleSubmit((formValues) =>
           mutation.mutate(formValues),
         )}

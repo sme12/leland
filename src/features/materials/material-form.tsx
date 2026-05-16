@@ -4,6 +4,7 @@ import type { Resolver } from 'react-hook-form';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 
+import { preventImplicitSubmit } from '#/components/prevent-implicit-submit';
 import type { MaterialCategory, UnitOfMeasure } from '#/shared/enums';
 import { MATERIAL_CATEGORIES, UNIT_OF_MEASURE } from '#/shared/enums';
 import type {
@@ -75,7 +76,11 @@ export function MaterialForm({
   }
 
   return (
-    <form className="space-y-5" onSubmit={form.handleSubmit(submit)}>
+    <form
+      className="space-y-5"
+      onKeyDown={preventImplicitSubmit}
+      onSubmit={form.handleSubmit(submit)}
+    >
       <label className="block">
         <span className="text-sm font-medium">{t('material.fields.name')}</span>
         <input

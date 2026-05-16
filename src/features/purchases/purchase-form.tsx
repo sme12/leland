@@ -4,6 +4,7 @@ import type { Resolver, UseFormRegisterReturn } from 'react-hook-form';
 import { useForm, useWatch } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 
+import { preventImplicitSubmit } from '#/components/prevent-implicit-submit';
 import type { UnitOfMeasure } from '#/shared/enums';
 import {
   computeContainerTotalQuantity,
@@ -115,7 +116,11 @@ export function PurchaseForm({
   }
 
   return (
-    <form className="space-y-5" onSubmit={form.handleSubmit(submit)}>
+    <form
+      className="space-y-5"
+      onKeyDown={preventImplicitSubmit}
+      onSubmit={form.handleSubmit(submit)}
+    >
       <div className="rounded-md border border-border bg-muted/35 px-3 py-2">
         <p className="text-sm font-semibold">{material.name}</p>
         <p className="mt-1 text-sm text-muted-foreground">

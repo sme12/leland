@@ -8,6 +8,7 @@ import { useEffect, useMemo } from 'react';
 import { FormProvider, useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 
+import { preventImplicitSubmit } from '#/components/prevent-implicit-submit';
 import { customerKeys } from '#/features/customers/customer-queries';
 import {
   applyVisitServerError,
@@ -180,6 +181,7 @@ function EditVisitRoute() {
         ) : (
           <FormProvider {...form}>
             <form
+              onKeyDown={preventImplicitSubmit}
               onSubmit={form.handleSubmit((values) => mutation.mutate(values))}
             >
               <VisitFormBody

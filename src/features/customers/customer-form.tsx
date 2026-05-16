@@ -4,6 +4,7 @@ import type { Resolver } from 'react-hook-form';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 
+import { preventImplicitSubmit } from '#/components/prevent-implicit-submit';
 import type {
   CustomerFormInput,
   CustomerFormValues,
@@ -37,6 +38,7 @@ export function CustomerForm({
   return (
     <form
       className="space-y-5"
+      onKeyDown={preventImplicitSubmit}
       onSubmit={form.handleSubmit((values) => onSubmit(values))}
     >
       <label className="block">
