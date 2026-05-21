@@ -13,7 +13,8 @@ const appNavLinks: Record<AppNavDestination, string> = {
 };
 
 export async function clickAppNav(page: Page, destination: AppNavDestination) {
-  const visibleLink = page.getByTestId(appNavLinks[destination]).first();
+  const linkTestId = appNavLinks[destination];
+  const visibleLink = page.getByTestId(linkTestId).first();
 
   if ((await visibleLink.count()) > 0 && (await visibleLink.isVisible())) {
     await visibleLink.click();
@@ -21,21 +22,12 @@ export async function clickAppNav(page: Page, destination: AppNavDestination) {
   }
 
   const menuButton = page.getByTestId(testIds.appNav.menuButton);
-  const drawerLink = page.getByTestId(appNavLinks[destination]).first();
+  const drawer = page.getByTestId(testIds.appNav.menuDrawer);
+  const drawerLink = drawer.getByTestId(linkTestId);
 
   await expect(menuButton).toBeVisible();
-
-  for (let attempt = 0; attempt < 4; attempt += 1) {
-    await menuButton.click();
-
-    try {
-      await expect(drawerLink).toBeVisible({ timeout: 1000 });
-      await drawerLink.click();
-      return;
-    } catch {
-      await page.waitForTimeout(250);
-    }
-  }
-
+  await menuButton.click();
+  await expect(drawer).toBeVisible();
+  await expect(drawerLink).toBeVisible();
   await drawerLink.click();
 }

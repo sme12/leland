@@ -18,13 +18,16 @@ export const TEST_MATERIAL_PREFIX = 'SMOKE MAT ';
 export function skipIfE2eEnvMissing() {
   test.skip(
     !e2eEnvReady,
-    'E2E requires Clerk, DATABASE_URL, and two distinct user emails.',
+    'E2E requires Clerk, DATABASE_URL, E2E_TEST_MODE=true, and two distinct user emails.',
   );
 }
 
+let initialCleanupStarted = false;
+
 export function registerE2eCleanup() {
   test.beforeAll(async ({ browser }) => {
-    if (!e2eEnvReady) return;
+    if (!e2eEnvReady || initialCleanupStarted) return;
+    initialCleanupStarted = true;
     test.setTimeout(120_000);
     await cleanupE2eData(browser);
   });

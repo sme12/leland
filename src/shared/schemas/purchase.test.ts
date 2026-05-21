@@ -45,6 +45,17 @@ describe('purchase schemas', () => {
     ).toThrow();
   });
 
+  it('reports blank quantities as validation failures', () => {
+    const result = purchaseCreateSchema.safeParse({
+      materialId: 'material-id',
+      totalQuantity: '',
+      totalPrice: '1',
+      date: '2026-05-14',
+    });
+
+    expect(result.success).toBe(false);
+  });
+
   it('validates date-only strings', () => {
     expect(() =>
       purchaseCreateSchema.parse({

@@ -17,9 +17,12 @@ export const quantityStringSchema = z
   .string()
   .trim()
   .regex(decimalQuantityPattern, 'validation.quantity')
-  .refine((value) => new Decimal(value).gt(0), {
-    message: 'validation.quantityPositive',
-  });
+  .refine(
+    (value) => decimalQuantityPattern.test(value) && new Decimal(value).gt(0),
+    {
+      message: 'validation.quantityPositive',
+    },
+  );
 
 export const purchaseDateSchema = z
   .string()
