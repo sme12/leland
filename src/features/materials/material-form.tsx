@@ -15,6 +15,7 @@ import {
   materialCreateSchema,
   materialEditFormSchema,
 } from '#/shared/schemas/material';
+import { testIds } from '#/testing/test-ids';
 
 type MaterialFormMode = 'create' | 'edit';
 
@@ -77,6 +78,7 @@ export function MaterialForm({
 
   return (
     <form
+      data-testid={testIds.materialForm.root}
       className="space-y-5"
       onKeyDown={preventImplicitSubmit}
       onSubmit={form.handleSubmit(submit)}
@@ -85,6 +87,7 @@ export function MaterialForm({
         <span className="text-sm font-medium">{t('material.fields.name')}</span>
         <input
           {...form.register('name')}
+          data-testid={testIds.materialForm.nameInput}
           autoComplete="off"
           disabled={!isHydrated || isSubmitting}
           className="mt-2 h-11 w-full rounded-md border border-border bg-surface px-3 outline-none focus:ring-2 focus:ring-ring disabled:opacity-60"
@@ -102,6 +105,7 @@ export function MaterialForm({
         </span>
         <select
           {...form.register('category')}
+          data-testid={testIds.materialForm.categorySelect}
           disabled={!isHydrated || isSubmitting}
           className="mt-2 h-11 w-full rounded-md border border-border bg-surface px-3 outline-none focus:ring-2 focus:ring-ring disabled:opacity-60"
         >
@@ -125,6 +129,7 @@ export function MaterialForm({
           </span>
           <select
             {...form.register('unitOfMeasure')}
+            data-testid={testIds.materialForm.unitSelect}
             disabled={!isHydrated || isSubmitting}
             className="mt-2 h-11 w-full rounded-md border border-border bg-surface px-3 outline-none focus:ring-2 focus:ring-ring disabled:opacity-60"
           >
@@ -147,6 +152,7 @@ export function MaterialForm({
 
       <button
         type="submit"
+        data-testid={testIds.materialForm.submitButton}
         disabled={!isHydrated || isSubmitting}
         className="inline-flex h-11 items-center gap-2 rounded-md bg-foreground px-4 text-sm font-semibold text-background outline-none transition hover:opacity-90 focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-60"
       >

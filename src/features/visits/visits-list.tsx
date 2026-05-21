@@ -9,6 +9,7 @@ import { useTranslation } from 'react-i18next';
 import type { VisitOrDraftListRowDto } from '#/server/visits';
 import { listVisitRows } from '#/server/visits';
 import { formatEuro } from '#/shared/purchase-format';
+import { testIds } from '#/testing/test-ids';
 import { visitKeys } from './visit-queries';
 
 type OptimisticVisitRow = VisitOrDraftListRowDto & { isPending?: boolean };
@@ -46,6 +47,7 @@ export function VisitsList() {
         </div>
         <Link
           to="/visits/new"
+          data-testid={testIds.visitsList.addLink}
           className="inline-flex h-10 items-center gap-2 rounded-md bg-foreground px-3 text-sm font-semibold text-background outline-none hover:opacity-90 focus-visible:ring-2 focus-visible:ring-ring"
         >
           <Plus aria-hidden="true" className="size-4" />
@@ -54,6 +56,7 @@ export function VisitsList() {
       </div>
 
       <section
+        data-testid={testIds.visitsList.root}
         data-visits-list
         data-loaded={query.isPending ? 'false' : 'true'}
         className="mt-6 overflow-hidden rounded-md border border-border bg-surface"
@@ -79,6 +82,7 @@ export function VisitsList() {
                   {group.visits.map((row) => (
                     <li
                       key={`${row.recordType}-${row.id}`}
+                      data-testid={testIds.visitsList.row}
                       data-visit-id={
                         row.recordType === 'visit' ? row.id : undefined
                       }
@@ -139,7 +143,9 @@ function VisitRow({
           <span className="truncate">{row.customer.name}</span>
           {isDraft ? (
             <span className="shrink-0 rounded-md border border-border bg-surface px-2 py-0.5 text-xs font-semibold text-muted-foreground">
-              {t('visit.draftBadge')}
+              <span data-testid={testIds.visitsList.draftBadge}>
+                {t('visit.draftBadge')}
+              </span>
             </span>
           ) : null}
         </span>

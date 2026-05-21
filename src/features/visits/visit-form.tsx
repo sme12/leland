@@ -28,6 +28,7 @@ import {
 import { moneyStringSchema } from '#/shared/schemas/decimal';
 import { isFutureHelsinkiDate, isPastHelsinkiDate } from '#/shared/date';
 import { formatEuro } from '#/shared/purchase-format';
+import { testIds } from '#/testing/test-ids';
 
 export type VisitFormMode = 'create' | 'edit';
 export type VisitRecordType = 'visit' | 'draft';
@@ -104,10 +105,11 @@ export function VisitFormBody({
       : t('visit.fields.priceCharged');
 
   return (
-    <div className="space-y-6 pb-28">
+    <div data-testid={testIds.visitForm.root} className="space-y-6 pb-28">
       <label className="block">
         <span className="text-sm font-medium">{t('visit.fields.date')}</span>
         <input
+          data-testid={testIds.visitForm.dateInput}
           type="date"
           {...form.register('date')}
           className="mt-2 h-11 w-full rounded-md border border-border bg-surface px-3 outline-none focus:ring-2 focus:ring-ring"
@@ -146,9 +148,18 @@ export function VisitFormBody({
         }
         onCreate={mode === 'create' ? onCreateCustomer : undefined}
         createLabel={(query) => t('visit.createCustomerCta', { name: query })}
+        testIds={{
+          trigger: testIds.visitForm.customerTrigger,
+          dialog: testIds.visitForm.customerDialog,
+          searchInput: testIds.visitForm.customerSearchInput,
+          option: testIds.visitForm.customerOption,
+          createButton: testIds.visitForm.customerCreateButton,
+        }}
+        getOptionTestValue={(customer) => customer.id}
       />
 
       <section
+        data-testid={testIds.visitForm.materialsSection}
         className={
           customerId
             ? 'space-y-3'
@@ -190,6 +201,7 @@ export function VisitFormBody({
 
         <button
           type="button"
+          data-testid={testIds.visitForm.addMaterialButton}
           disabled={!customerId}
           onClick={() => append({ materialId: '', amount: '', unitCost: '' })}
           className="inline-flex h-10 items-center gap-2 rounded-md border border-border px-3 text-sm font-semibold outline-none hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-60"
@@ -241,6 +253,13 @@ export function VisitFormBody({
             });
           }
         }}
+        testIds={{
+          trigger: testIds.visitForm.serviceTrigger,
+          dialog: testIds.visitForm.serviceDialog,
+          searchInput: testIds.visitForm.serviceSearchInput,
+          option: testIds.visitForm.serviceOption,
+        }}
+        getOptionTestValue={(service) => service.name}
       />
 
       <div>
@@ -248,6 +267,8 @@ export function VisitFormBody({
           <span className="text-sm font-medium">{priceLabel}</span>
           <input
             {...form.register('priceCharged')}
+            data-testid={testIds.visitForm.priceInput}
+            data-record-type={recordType}
             inputMode="decimal"
             className="mt-2 h-11 w-full rounded-md border border-border bg-surface px-3 outline-none focus:ring-2 focus:ring-ring"
           />
@@ -262,7 +283,11 @@ export function VisitFormBody({
         </label>
 
         {priceSuggestion ? (
-          <div className="mt-2 flex flex-wrap items-center justify-between gap-2 rounded-md bg-muted/45 px-3 py-2">
+          <div
+            data-testid={testIds.visitForm.priceSuggestion}
+            data-suggested-price={priceSuggestion}
+            className="mt-2 flex flex-wrap items-center justify-between gap-2 rounded-md bg-muted/45 px-3 py-2"
+          >
             <span className="text-sm text-muted-foreground">
               {t('visit.priceSuggestion', {
                 value: formatEuro(priceSuggestion, i18n.language),
@@ -270,6 +295,7 @@ export function VisitFormBody({
             </span>
             <button
               type="button"
+              data-testid={testIds.visitForm.applyPriceSuggestionButton}
               onClick={() =>
                 form.setValue('priceCharged', priceSuggestion, {
                   shouldDirty: true,
@@ -289,6 +315,7 @@ export function VisitFormBody({
         <span className="text-sm font-medium">{t('visit.fields.note')}</span>
         <textarea
           {...form.register('note')}
+          data-testid={testIds.visitForm.noteInput}
           rows={4}
           className="mt-2 w-full resize-y rounded-md border border-border bg-surface px-3 py-2 outline-none focus:ring-2 focus-visible:ring-ring"
         />
@@ -365,7 +392,11 @@ function VisitLineItemRow({
   }, [form, index, unitCostQuery.data]);
 
   return (
-    <div className="rounded-md border border-border bg-surface p-3">
+    <div
+      data-testid={testIds.visitForm.lineItem}
+      data-line-index={index}
+      className="rounded-md border border-border bg-surface p-3"
+    >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           <PickerSheet
@@ -378,6 +409,13 @@ function VisitLineItemRow({
             selectedId={materialId}
             disabled={disabled}
             getOptionLabel={(material) => material.name}
+            testIds={{
+              trigger: testIds.visitForm.materialTrigger,
+              dialog: testIds.visitForm.materialDialog,
+              searchInput: testIds.visitForm.materialSearchInput,
+              option: testIds.visitForm.materialOption,
+            }}
+            getOptionTestValue={(material) => material.id}
             isOptionDisabled={(material) =>
               recordType === 'visit' && !material.hasPurchases
             }
@@ -386,6 +424,8 @@ function VisitLineItemRow({
                 ? (material) => (
                     <button
                       type="button"
+                      data-testid={testIds.visitForm.materialBuyFirstButton}
+                      data-material-id={material.id}
                       onClick={() => onBuyFirst(material.id)}
                       className="shrink-0 rounded-md border border-border px-2 py-1 text-xs font-semibold outline-none hover:bg-background focus-visible:ring-2 focus-visible:ring-ring"
                     >
@@ -418,6 +458,7 @@ function VisitLineItemRow({
         </div>
         <button
           type="button"
+          data-testid={testIds.visitForm.materialRemoveButton}
           onClick={onRemove}
           aria-label={t('visit.removeLineItem')}
           className="mt-8 inline-flex size-11 shrink-0 items-center justify-center rounded-md border border-border text-danger outline-none hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring"
@@ -430,13 +471,17 @@ function VisitLineItemRow({
         <span className="text-sm font-medium">{t('visit.fields.amount')}</span>
         <input
           {...form.register(`items.${index}.amount`)}
+          data-testid={testIds.visitForm.materialAmountInput}
           inputMode="decimal"
           disabled={disabled || !materialId}
           className="mt-2 h-11 w-full rounded-md border border-border bg-background px-3 outline-none focus:ring-2 focus:ring-ring disabled:opacity-60"
         />
       </label>
 
-      <p className="mt-2 text-sm text-muted-foreground">
+      <p
+        data-testid={testIds.visitForm.materialUnitCostCaption}
+        className="mt-2 text-sm text-muted-foreground"
+      >
         {selectedMaterial && unitCost ? (
           <>
             {t('visit.unitCostCaption', {

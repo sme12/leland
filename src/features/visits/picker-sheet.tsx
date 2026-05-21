@@ -22,6 +22,14 @@ type PickerSheetProps<TOption extends PickerSheetOption> = {
   onCreate?: (query: string) => void;
   createLabel?: (query: string) => string;
   renderDisabledAction?: (option: TOption) => React.ReactNode;
+  testIds?: {
+    trigger?: string;
+    dialog?: string;
+    searchInput?: string;
+    option?: string;
+    createButton?: string;
+  };
+  getOptionTestValue?: (option: TOption) => string;
   disabled?: boolean;
 };
 
@@ -40,6 +48,8 @@ export function PickerSheet<TOption extends PickerSheetOption>({
   onCreate,
   createLabel,
   renderDisabledAction,
+  testIds,
+  getOptionTestValue,
   disabled = false,
 }: PickerSheetProps<TOption>) {
   const { t } = useTranslation();
@@ -83,6 +93,7 @@ export function PickerSheet<TOption extends PickerSheetOption>({
       >
         <Dialog.Trigger
           type="button"
+          data-testid={testIds?.trigger}
           disabled={disabled}
           aria-labelledby={`${labelId} ${valueId}`}
           className="mt-2 flex min-h-11 w-full items-center justify-between gap-3 rounded-md border border-border bg-surface px-3 text-left outline-none transition hover:bg-muted/60 focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-60"
@@ -98,7 +109,10 @@ export function PickerSheet<TOption extends PickerSheetOption>({
         </Dialog.Trigger>
         <Dialog.Portal>
           <Dialog.Backdrop className="fixed inset-0 z-40 bg-foreground/30" />
-          <Dialog.Popup className="fixed inset-x-0 bottom-0 z-50 max-h-[85dvh] rounded-t-md border border-border bg-surface shadow-xl outline-none sm:inset-x-1/2 sm:bottom-auto sm:top-20 sm:w-[min(28rem,calc(100vw-2rem))] sm:-translate-x-1/2 sm:rounded-md">
+          <Dialog.Popup
+            data-testid={testIds?.dialog}
+            className="fixed inset-x-0 bottom-0 z-50 max-h-[85dvh] rounded-t-md border border-border bg-surface shadow-xl outline-none sm:inset-x-1/2 sm:bottom-auto sm:top-20 sm:w-[min(28rem,calc(100vw-2rem))] sm:-translate-x-1/2 sm:rounded-md"
+          >
             <div className="flex items-center justify-between gap-3 border-b border-border px-4 py-3">
               <Dialog.Title className="text-base font-semibold">
                 {label}
@@ -118,6 +132,7 @@ export function PickerSheet<TOption extends PickerSheetOption>({
                   className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
                 />
                 <input
+                  data-testid={testIds?.searchInput}
                   value={query}
                   onChange={(event) => setQuery(event.target.value)}
                   placeholder={searchPlaceholder}
@@ -145,6 +160,10 @@ export function PickerSheet<TOption extends PickerSheetOption>({
                         >
                           <button
                             type="button"
+                            data-testid={testIds?.option}
+                            data-option-value={
+                              getOptionTestValue?.(option) ?? option.id
+                            }
                             disabled={optionDisabled}
                             onClick={() => {
                               onSelect(option);
@@ -173,6 +192,7 @@ export function PickerSheet<TOption extends PickerSheetOption>({
               {canCreate ? (
                 <button
                   type="button"
+                  data-testid={testIds?.createButton}
                   onClick={() => {
                     onCreate?.(query.trim());
                     setOpen(false);

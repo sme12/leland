@@ -42,6 +42,7 @@ import {
 } from '#/server/visits';
 import type { VisitOrDraftListRowDto } from '#/server/visits';
 import { formatEuro, tryFormatEuro } from '#/shared/purchase-format';
+import { testIds } from '#/testing/test-ids';
 
 export const Route = createFileRoute('/_app/visits/new')({
   component: NewVisitRoute,
@@ -213,10 +214,7 @@ function NewVisitFormScreen() {
     !isReady || isAnyPending || visitMissingKeys.length > 0;
   const isDraftSubmitDisabled =
     !isReady || isAnyPending || draftMissingKeys.length > 0;
-  const hintKey =
-    visitMissingKeys.length === 0 || draftMissingKeys.length === 0
-      ? undefined
-      : visitMissingKeys[0];
+  const hintKey = visitMissingKeys[0];
 
   function hasActiveSubmission() {
     return isAnyPending || submitLockRef.current;
@@ -254,7 +252,10 @@ function NewVisitFormScreen() {
   }
 
   return (
-    <main className="mx-auto w-full max-w-2xl px-4 py-8">
+    <main
+      data-testid={testIds.visitNew.root}
+      className="mx-auto w-full max-w-2xl px-4 py-8"
+    >
       <button
         type="button"
         onClick={() => navigate({ to: '/visits' })}
@@ -269,6 +270,7 @@ function NewVisitFormScreen() {
 
       <form
         id="new-visit-form"
+        data-testid={testIds.visitNew.form}
         className="mt-6"
         onKeyDown={preventImplicitSubmit}
         onSubmit={form.handleSubmit(submitVisit)}
@@ -301,7 +303,10 @@ function NewVisitFormScreen() {
         )}
       </form>
 
-      <div className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-surface/95 px-4 py-3 shadow-lg backdrop-blur">
+      <div
+        data-testid={testIds.visitNew.summary}
+        className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-surface/95 px-4 py-3 shadow-lg backdrop-blur"
+      >
         <div className="mx-auto flex w-full max-w-2xl items-center justify-between gap-3">
           <div className="min-w-0">
             <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
@@ -324,12 +329,15 @@ function NewVisitFormScreen() {
               </span>
             </div>
             {hintKey ? (
-              <p className="mt-1 text-xs text-muted-foreground">{t(hintKey)}</p>
+              <p role="status" className="mt-1 text-xs text-muted-foreground">
+                {t(hintKey)}
+              </p>
             ) : null}
           </div>
           <div className="flex shrink-0 flex-wrap justify-end gap-2">
             <button
               type="button"
+              data-testid={testIds.visitNew.saveDraftButton}
               disabled={isDraftSubmitDisabled}
               onClick={() => {
                 form.setValue('recordType', 'draft', { shouldDirty: false });
@@ -343,6 +351,7 @@ function NewVisitFormScreen() {
             <button
               type="submit"
               form="new-visit-form"
+              data-testid={testIds.visitNew.saveButton}
               disabled={isSubmitDisabled}
               onClick={() =>
                 form.setValue('recordType', 'visit', { shouldDirty: false })

@@ -25,6 +25,7 @@ import type { ServiceDto } from '#/server/services';
 import { listServices } from '#/server/services';
 import { getVisit, listMaterialsForPicker, updateVisit } from '#/server/visits';
 import type { VisitDto, VisitMaterialPickerDto } from '#/server/visits';
+import { testIds } from '#/testing/test-ids';
 
 export const Route = createFileRoute('/_app/visits/$visitId_/edit')({
   component: EditVisitRoute,
@@ -153,7 +154,10 @@ function EditVisitRoute() {
     hasFormData;
 
   return (
-    <main className="mx-auto w-full max-w-2xl px-4 py-8">
+    <main
+      data-testid={testIds.visitEdit.root}
+      className="mx-auto w-full max-w-2xl px-4 py-8"
+    >
       <Link
         to="/visits/$visitId"
         params={{ visitId }}
@@ -181,6 +185,7 @@ function EditVisitRoute() {
         ) : (
           <FormProvider {...form}>
             <form
+              data-testid={testIds.visitEdit.form}
               onKeyDown={preventImplicitSubmit}
               onSubmit={form.handleSubmit((values) => mutation.mutate(values))}
             >
@@ -201,6 +206,7 @@ function EditVisitRoute() {
               ) : null}
               <button
                 type="submit"
+                data-testid={testIds.visitEdit.saveButton}
                 disabled={mutation.isPending || missingKeys.length > 0}
                 className="mt-4 inline-flex h-11 items-center gap-2 rounded-md bg-foreground px-4 text-sm font-semibold text-background outline-none transition hover:opacity-90 focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-60"
               >
