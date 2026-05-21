@@ -10,7 +10,8 @@ export const e2eEnvReady = Boolean(
   userAEmail &&
   userBEmail &&
   userAEmail !== userBEmail &&
-  process.env.DATABASE_URL,
+  process.env.DATABASE_URL &&
+  process.env.E2E_TEST_MODE === 'true',
 );
 
 export function getE2eEmail(user: 'A' | 'B') {

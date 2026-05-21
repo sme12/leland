@@ -32,6 +32,7 @@ import {
   updateVisitDraft,
 } from '#/server/visits';
 import type { VisitDraftDto, VisitMaterialPickerDto } from '#/server/visits';
+import { testIds } from '#/testing/test-ids';
 
 export const Route = createFileRoute('/_app/visits/drafts/$draftId_/edit')({
   component: EditVisitDraftRoute,
@@ -247,7 +248,10 @@ function EditVisitDraftRoute() {
   }
 
   return (
-    <main className="mx-auto w-full max-w-2xl px-4 py-8">
+    <main
+      data-testid={testIds.visitDraftEdit.root}
+      className="mx-auto w-full max-w-2xl px-4 py-8"
+    >
       <Link
         to="/visits"
         className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground"
@@ -276,6 +280,7 @@ function EditVisitDraftRoute() {
         ) : (
           <FormProvider {...form}>
             <form
+              data-testid={testIds.visitDraftEdit.form}
               onKeyDown={preventImplicitSubmit}
               onSubmit={form.handleSubmit((values) =>
                 saveMutation.mutate({ ...values, recordType: 'draft' }),
@@ -299,6 +304,7 @@ function EditVisitDraftRoute() {
               <div className="mt-4 flex flex-wrap items-center justify-between gap-2">
                 <button
                   type="button"
+                  data-testid={testIds.visitDraftEdit.discardButton}
                   onClick={confirmDiscard}
                   disabled={anyMutationPending || !isReady}
                   className="inline-flex h-11 items-center gap-2 rounded-md border border-border px-4 text-sm font-semibold text-danger outline-none transition hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-60"
@@ -309,6 +315,7 @@ function EditVisitDraftRoute() {
                 <div className="flex flex-wrap justify-end gap-2">
                   <button
                     type="submit"
+                    data-testid={testIds.visitDraftEdit.saveButton}
                     disabled={isSaveDisabled}
                     className="inline-flex h-11 items-center gap-2 rounded-md border border-border px-4 text-sm font-semibold outline-none transition hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-60"
                   >
@@ -317,6 +324,7 @@ function EditVisitDraftRoute() {
                   </button>
                   <button
                     type="button"
+                    data-testid={testIds.visitDraftEdit.publishButton}
                     onClick={() => publishMutation.mutate()}
                     disabled={isPublishDisabled}
                     className="inline-flex h-11 items-center gap-2 rounded-md bg-foreground px-4 text-sm font-semibold text-background outline-none transition hover:opacity-90 focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-60"

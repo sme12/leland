@@ -2,6 +2,7 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
 import { appI18n } from '#/i18n';
+import { testIds } from '#/testing/test-ids';
 import { PurchaseForm } from './purchase-form';
 
 describe('PurchaseForm', () => {
@@ -27,21 +28,21 @@ describe('PurchaseForm', () => {
     await waitFor(() => {
       expect(
         screen
-          .getByRole('button', { name: /save purchase/i })
+          .getByTestId(testIds.purchaseForm.submitButton)
           .hasAttribute('disabled'),
       ).toBe(false);
     });
 
-    fireEvent.change(screen.getByLabelText(/how many/i), {
+    fireEvent.change(screen.getByTestId(testIds.purchaseForm.countInput), {
       target: { value: '2' },
     });
-    fireEvent.change(screen.getByLabelText(/size each/i), {
+    fireEvent.change(screen.getByTestId(testIds.purchaseForm.sizeEachInput), {
       target: { value: '500' },
     });
-    fireEvent.change(screen.getByLabelText(/total price/i), {
+    fireEvent.change(screen.getByTestId(testIds.purchaseForm.totalPriceInput), {
       target: { value: '44.50' },
     });
-    fireEvent.click(screen.getByRole('button', { name: /save purchase/i }));
+    fireEvent.click(screen.getByTestId(testIds.purchaseForm.submitButton));
 
     await waitFor(() => {
       expect(onSave).toHaveBeenCalledWith({

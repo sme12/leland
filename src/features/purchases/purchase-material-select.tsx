@@ -2,6 +2,7 @@ import { ChevronDown } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 import type { MaterialDto } from '#/server/materials';
+import { testIds } from '#/testing/test-ids';
 
 export type PurchaseMaterialOption = Pick<
   MaterialDto,
@@ -30,6 +31,7 @@ export function PurchaseMaterialSelect({
       </span>
       <span className="relative mt-2 block">
         <select
+          data-testid={testIds.purchaseMaterialSelect.select}
           value={selectedId}
           disabled={disabled}
           onChange={(event) => onChange(event.target.value)}
@@ -37,7 +39,11 @@ export function PurchaseMaterialSelect({
         >
           <option value="">{t('purchase.selectMaterial')}</option>
           {materials.map((material) => (
-            <option key={material.id} value={material.id}>
+            <option
+              key={material.id}
+              value={material.id}
+              data-material-id={material.id}
+            >
               {material.name} · {t(`material.category.${material.category}`)} ·{' '}
               {t(`material.uom.${material.unitOfMeasure}`)}
               {material.isArchived ? ` · ${t('purchase.archived')}` : ''}

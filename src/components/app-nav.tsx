@@ -15,6 +15,7 @@ import {
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import { testIds } from '#/testing/test-ids';
 import { LanguageSwitcher } from './language-switcher';
 
 const iconButtonClass =
@@ -40,11 +41,16 @@ export function AppNav() {
         >
           {t('app.name')}
         </Link>
-        <nav aria-label={t('app.name')} className="flex items-center gap-1.5">
+        <nav
+          aria-label={t('app.name')}
+          data-testid={testIds.appNav.root}
+          className="flex items-center gap-1.5"
+        >
           <Show when="signed-in">
             <Link
               to="/visits"
               aria-label={t('nav.visits')}
+              data-testid={testIds.appNav.visitsLink}
               title={t('nav.visits')}
               activeProps={{ className: 'bg-muted' }}
               className={iconButtonClass}
@@ -54,6 +60,7 @@ export function AppNav() {
             <Link
               to="/purchases"
               aria-label={t('nav.purchases')}
+              data-testid={testIds.appNav.purchasesLink}
               title={t('nav.purchases')}
               activeProps={{ className: 'bg-muted' }}
               className={iconButtonClass}
@@ -68,6 +75,7 @@ export function AppNav() {
           >
             <Drawer.Trigger
               aria-label={t('nav.menu')}
+              data-testid={testIds.appNav.menuButton}
               title={t('nav.menu')}
               className={iconButtonClass}
             >
@@ -79,6 +87,7 @@ export function AppNav() {
                 <Drawer.Popup className="pointer-events-auto flex h-dvh w-[min(20rem,calc(100vw-1.5rem))] max-w-full translate-x-0 flex-col border-l border-border bg-background shadow-2xl transition-transform duration-200 ease-out data-[ending-style]:translate-x-full data-[starting-style]:translate-x-full data-[swiping]:transition-none">
                   <nav
                     aria-label={t('nav.menu')}
+                    data-testid={testIds.appNav.menuDrawer}
                     className="flex min-h-0 flex-1 flex-col"
                   >
                     <div className="flex min-h-14 items-center justify-between border-b border-border px-4">
@@ -97,6 +106,7 @@ export function AppNav() {
                         <div className="grid gap-1">
                           <Link
                             to="/customers"
+                            data-testid={testIds.appNav.customersLink}
                             onClick={closeMenu}
                             activeProps={{ className: drawerActiveClass }}
                             className={drawerLinkClass}
@@ -106,6 +116,7 @@ export function AppNav() {
                           </Link>
                           <Link
                             to="/materials"
+                            data-testid={testIds.appNav.materialsLink}
                             onClick={closeMenu}
                             activeProps={{ className: drawerActiveClass }}
                             className={drawerLinkClass}
@@ -115,6 +126,7 @@ export function AppNav() {
                           </Link>
                           <Link
                             to="/catalog/services"
+                            data-testid={testIds.appNav.servicePricesLink}
                             onClick={closeMenu}
                             activeProps={{ className: drawerActiveClass }}
                             className={drawerLinkClass}
@@ -140,6 +152,7 @@ export function AppNav() {
                           </div>
                           <Link
                             to="/sign-out"
+                            data-testid={testIds.appNav.signOutLink}
                             onClick={closeMenu}
                             className={drawerLinkClass}
                           >
@@ -151,6 +164,7 @@ export function AppNav() {
                           <SignInButton mode="redirect">
                             <button
                               type="button"
+                              data-testid={testIds.appNav.signInButton}
                               className="flex w-full items-center gap-3 rounded-md bg-foreground px-3 py-3 text-sm font-medium text-background outline-none transition hover:opacity-90 focus-visible:ring-2 focus-visible:ring-ring"
                               onClick={closeMenu}
                             >

@@ -17,6 +17,9 @@ Required env vars (see [.env.example](../.env.example)):
 E2E env vars (see [.env.test.example](../.env.test.example)):
 `CLERK_E2E_USER_A_EMAIL`, `CLERK_E2E_USER_B_EMAIL`, `E2E_TEST_MODE=true`.
 
+CI E2E also requires Neon GitHub Actions configuration:
+repository secret `NEON_API_KEY`, repository variable `NEON_PROJECT_ID`, and repository variable `NEON_E2E_PARENT_BRANCH`. `NEON_E2E_PARENT_BRANCH` must be a non-production Neon branch used as the parent for temporary test branches. Keep it migration-compatible and seeded only with sanitized or empty app data.
+
 ## Dev / build
 
 ```bash
@@ -41,4 +44,4 @@ Commit the migration. Do **not** commit changes to [src/generated/prisma/](../sr
 ## Deployment
 
 - Vercel build config: [vercel.json](../vercel.json) → `pnpm vercel-build` runs `prisma generate && prisma migrate deploy && vite build`. Pushes to `main` deploy via Vercel.
-- CI ([.github/workflows/pr.yml](../.github/workflows/pr.yml)) runs on PR and pushes to `main`: install → `prisma:generate` → `typecheck` → `lint` → `test`. Playwright steps are currently disabled.
+- CI ([.github/workflows/pr.yml](../.github/workflows/pr.yml)) runs on PR and pushes to `main`: install → `prisma:generate` → `typecheck` → `lint` → `test`. A separate Playwright job creates a temporary Neon E2E branch, runs migrations, runs `pnpm e2e`, uploads artifacts, and deletes the branch.

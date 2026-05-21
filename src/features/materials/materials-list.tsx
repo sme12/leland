@@ -20,6 +20,7 @@ import type { MaterialStatus } from './material-queries';
 import { invalidateVisitMaterialQueries } from '#/features/visits/visit-query-invalidation';
 import { listMaterials, setMaterialArchived } from '#/server/materials';
 import { MATERIAL_CATEGORIES } from '#/shared/enums';
+import { testIds } from '#/testing/test-ids';
 import { materialKeys } from './material-queries';
 
 export function MaterialsList() {
@@ -109,6 +110,7 @@ export function MaterialsList() {
         </div>
         <Link
           to="/materials/new"
+          data-testid={testIds.materialsList.addLink}
           className="inline-flex h-10 items-center gap-2 rounded-md bg-foreground px-3 text-sm font-semibold text-background outline-none hover:opacity-90 focus-visible:ring-2 focus-visible:ring-ring"
         >
           <Plus aria-hidden="true" className="size-4" />
@@ -125,6 +127,11 @@ export function MaterialsList() {
           <button
             key={item}
             type="button"
+            data-testid={
+              item === 'active'
+                ? testIds.materialsList.activeButton
+                : testIds.materialsList.archivedButton
+            }
             aria-pressed={status === item}
             onClick={() => setStatus(item)}
             className="h-9 rounded px-4 text-sm font-medium transition aria-pressed:bg-foreground aria-pressed:text-background"
@@ -135,6 +142,7 @@ export function MaterialsList() {
       </div>
 
       <section
+        data-testid={testIds.materialsList.root}
         data-materials-list
         data-loaded={query.isPending ? 'false' : 'true'}
         className="mt-5 overflow-hidden rounded-md border border-border bg-surface"
@@ -161,6 +169,8 @@ export function MaterialsList() {
                 >
                   <button
                     type="button"
+                    data-testid={testIds.materialsList.categoryToggle}
+                    data-material-category={group.category}
                     aria-expanded={isOpen}
                     onClick={() => toggleCategory(group.category)}
                     className="flex w-full items-center justify-between gap-3 bg-muted/40 px-4 py-3 text-left outline-none hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring"
@@ -187,6 +197,7 @@ export function MaterialsList() {
                       {group.materials.map((material) => (
                         <li
                           key={material.id}
+                          data-testid={testIds.materialsList.row}
                           data-material-id={material.id}
                           className="flex items-start justify-between gap-3 p-4"
                         >

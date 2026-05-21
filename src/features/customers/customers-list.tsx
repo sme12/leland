@@ -9,6 +9,7 @@ import { useTranslation } from 'react-i18next';
 import type { CustomerDto } from '#/server/customers';
 import type { CustomerStatus } from './customer-queries';
 import { listCustomers, setCustomerArchived } from '#/server/customers';
+import { testIds } from '#/testing/test-ids';
 import { customerKeys } from './customer-queries';
 
 export function CustomersList() {
@@ -68,6 +69,7 @@ export function CustomersList() {
         </div>
         <Link
           to="/customers/new"
+          data-testid={testIds.customersList.addLink}
           className="inline-flex h-10 items-center gap-2 rounded-md bg-foreground px-3 text-sm font-semibold text-background outline-none hover:opacity-90 focus-visible:ring-2 focus-visible:ring-ring"
         >
           <Plus aria-hidden="true" className="size-4" />
@@ -85,6 +87,11 @@ export function CustomersList() {
             key={item}
             type="button"
             role="tab"
+            data-testid={
+              item === 'active'
+                ? testIds.customersList.activeTab
+                : testIds.customersList.archivedTab
+            }
             aria-selected={status === item}
             onClick={() => setStatus(item)}
             className="h-9 rounded px-4 text-sm font-medium transition aria-selected:bg-foreground aria-selected:text-background"
@@ -95,6 +102,7 @@ export function CustomersList() {
       </div>
 
       <section
+        data-testid={testIds.customersList.root}
         data-customers-list
         data-loaded={query.isPending ? 'false' : 'true'}
         className="mt-5 overflow-hidden rounded-md border border-border bg-surface"
@@ -116,6 +124,7 @@ export function CustomersList() {
             {sortedCustomers.map((customer) => (
               <li
                 key={customer.id}
+                data-testid={testIds.customersList.row}
                 data-customer-id={customer.id}
                 className="flex items-start justify-between gap-3 p-4"
               >

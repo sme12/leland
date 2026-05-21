@@ -18,6 +18,7 @@ export default defineConfig({
     timeout: 10_000,
   },
   fullyParallel: false,
+  workers: 1,
   retries: process.env.CI ? 1 : 0,
   use: {
     baseURL: process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000',

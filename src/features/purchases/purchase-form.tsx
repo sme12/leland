@@ -19,6 +19,7 @@ import {
   purchaseEditPieceFormSchema,
   purchasePieceFormSchema,
 } from '#/shared/schemas/purchase';
+import { testIds } from '#/testing/test-ids';
 
 export type PurchaseFormMaterial = {
   id: string;
@@ -117,11 +118,15 @@ export function PurchaseForm({
 
   return (
     <form
+      data-testid={testIds.purchaseForm.root}
       className="space-y-5"
       onKeyDown={preventImplicitSubmit}
       onSubmit={form.handleSubmit(submit)}
     >
-      <div className="rounded-md border border-border bg-muted/35 px-3 py-2">
+      <div
+        data-testid={testIds.purchaseForm.materialSummary}
+        className="rounded-md border border-border bg-muted/35 px-3 py-2"
+      >
         <p className="text-sm font-semibold">{material.name}</p>
         <p className="mt-1 text-sm text-muted-foreground">
           {t(`material.uom.${material.unitOfMeasure}`)}
@@ -134,6 +139,7 @@ export function PurchaseForm({
           registration={form.register('totalQuantity')}
           error={form.formState.errors.totalQuantity?.message}
           inputMode={isPiece ? 'numeric' : 'decimal'}
+          testId={testIds.purchaseForm.totalQuantityInput}
           disabled={isDisabled}
         />
       ) : isPiece ? (
@@ -142,6 +148,7 @@ export function PurchaseForm({
           registration={form.register('quantity')}
           error={form.formState.errors.quantity?.message}
           inputMode="numeric"
+          testId={testIds.purchaseForm.quantityInput}
           disabled={isDisabled}
         />
       ) : (
@@ -151,6 +158,7 @@ export function PurchaseForm({
             registration={form.register('count')}
             error={form.formState.errors.count?.message}
             inputMode="numeric"
+            testId={testIds.purchaseForm.countInput}
             disabled={isDisabled}
           />
           <TextInput
@@ -158,6 +166,7 @@ export function PurchaseForm({
             registration={form.register('sizeEach')}
             error={form.formState.errors.sizeEach?.message}
             inputMode="decimal"
+            testId={testIds.purchaseForm.sizeEachInput}
             disabled={isDisabled}
           />
           <p className="text-sm text-muted-foreground">
@@ -171,6 +180,7 @@ export function PurchaseForm({
         registration={form.register('totalPrice')}
         error={form.formState.errors.totalPrice?.message}
         inputMode="decimal"
+        testId={testIds.purchaseForm.totalPriceInput}
         disabled={isDisabled}
       />
 
@@ -179,11 +189,15 @@ export function PurchaseForm({
         registration={form.register('date')}
         error={form.formState.errors.date?.message}
         type="date"
+        testId={testIds.purchaseForm.dateInput}
         disabled={isDisabled}
       />
 
       {preview ? (
-        <p className="rounded-md bg-muted px-3 py-2 text-sm text-muted-foreground">
+        <p
+          data-testid={testIds.purchaseForm.unitCostPreview}
+          className="rounded-md bg-muted px-3 py-2 text-sm text-muted-foreground"
+        >
           {t('purchase.unitCostPreview', {
             value: preview,
             unit: t(`material.uom.${material.unitOfMeasure}`),
@@ -194,6 +208,7 @@ export function PurchaseForm({
       <div className="flex flex-wrap items-center gap-2">
         <button
           type="submit"
+          data-testid={testIds.purchaseForm.submitButton}
           disabled={isDisabled}
           className="inline-flex h-11 items-center gap-2 rounded-md bg-foreground px-4 text-sm font-semibold text-background outline-none transition hover:opacity-90 focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-60"
         >
@@ -202,6 +217,7 @@ export function PurchaseForm({
         </button>
         <button
           type="button"
+          data-testid={testIds.purchaseForm.cancelButton}
           disabled={isDisabled}
           onClick={onCancel}
           className="inline-flex h-11 items-center gap-2 rounded-md border border-border px-4 text-sm font-semibold outline-none transition hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-60"
@@ -220,6 +236,7 @@ type TextInputProps = {
   error?: string;
   inputMode?: 'decimal' | 'numeric';
   type?: 'text' | 'date';
+  testId: string;
   disabled: boolean;
 };
 
@@ -229,6 +246,7 @@ function TextInput({
   error,
   inputMode,
   type = 'text',
+  testId,
   disabled,
 }: TextInputProps) {
   const { t } = useTranslation();
@@ -238,6 +256,7 @@ function TextInput({
       <span className="text-sm font-medium">{label}</span>
       <input
         {...registration}
+        data-testid={testId}
         type={type}
         inputMode={inputMode}
         disabled={disabled}

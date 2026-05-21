@@ -4,7 +4,7 @@ Leland is a [TanStack Start](https://tanstack.com/start) full-stack React app (S
 
 **Package manager:** pnpm 10.28.0 (locked via `packageManager`). Node 24.x via `.nvmrc`.
 
-**PR gate:** run `pnpm check` before pushing — it runs prettier, typecheck, lint, and unit tests. Same gate CI enforces (minus e2e).
+**PR gate:** run `pnpm check` before pushing — it runs prettier, typecheck, lint, and unit tests. CI enforces the same code checks and also runs Playwright E2E for same-repo PRs/pushes against a temporary Neon E2E branch, never the production database.
 
 ## Tripwires
 

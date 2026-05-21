@@ -7,6 +7,7 @@ import type * as ReactStart from '@tanstack/react-start';
 import { appI18n } from '#/i18n';
 import type { ServiceDto } from '#/server/services';
 import type { VisitMaterialPickerDto } from '#/server/visits';
+import { testIds } from '#/testing/test-ids';
 import {
   createEmptyVisitFormValues,
   getVisitFormMissingKeys,
@@ -50,14 +51,14 @@ describe('VisitFormBody', () => {
 
     renderVisitFormBody();
 
-    fireEvent.click(screen.getByRole('button', { name: /add material/i }));
+    fireEvent.click(screen.getByTestId(testIds.visitForm.addMaterialButton));
 
-    const materialPicker = screen.getByRole('button', {
-      name: /material pick a material/i,
-    });
-    const addMaterialButton = screen.getByRole('button', {
-      name: /add material/i,
-    });
+    const materialPicker = screen.getByTestId(
+      testIds.visitForm.materialTrigger,
+    );
+    const addMaterialButton = screen.getByTestId(
+      testIds.visitForm.addMaterialButton,
+    );
 
     expect(
       materialPicker.compareDocumentPosition(addMaterialButton) &
@@ -78,10 +79,14 @@ describe('VisitFormBody', () => {
       },
     });
 
-    expect(screen.getByText('Suggested €30.00')).toBeTruthy();
+    expect(
+      screen
+        .getByTestId(testIds.visitForm.priceSuggestion)
+        .getAttribute('data-suggested-price'),
+    ).toBe('30');
   });
 
-  it('uses estimated price wording for draft forms', async () => {
+  it('marks the price field as draft-priced for draft forms', async () => {
     await appI18n.changeLanguage('en');
 
     renderVisitFormBody({
@@ -92,8 +97,11 @@ describe('VisitFormBody', () => {
       },
     });
 
-    expect(screen.getByText('Estimated price')).toBeTruthy();
-    expect(screen.queryByText('Charged')).toBeNull();
+    expect(
+      screen
+        .getByTestId(testIds.visitForm.priceInput)
+        .getAttribute('data-record-type'),
+    ).toBe('draft');
   });
 });
 

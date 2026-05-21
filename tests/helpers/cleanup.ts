@@ -1,28 +1,36 @@
 import type { Page } from '@playwright/test';
 
-async function waitForCustomersListLoaded(page: Page) {
+import { testIds } from '../../src/testing/test-ids';
+
+export async function waitForCustomersListLoaded(page: Page) {
   // Don't use networkidle — Vite's HMR websocket keeps the network "active" forever in dev.
   // The list section flips data-loaded to "true" once TanStack Query settles.
   await page
-    .locator('section[data-customers-list][data-loaded="true"]')
+    .locator(
+      `[data-testid="${testIds.customersList.root}"][data-loaded="true"]`,
+    )
     .waitFor({ state: 'attached', timeout: 10_000 });
 }
 
-async function waitForMaterialsListLoaded(page: Page) {
+export async function waitForMaterialsListLoaded(page: Page) {
   await page
-    .locator('section[data-materials-list][data-loaded="true"]')
+    .locator(
+      `[data-testid="${testIds.materialsList.root}"][data-loaded="true"]`,
+    )
     .waitFor({ state: 'attached', timeout: 10_000 });
 }
 
-async function waitForPurchasesListLoaded(page: Page) {
+export async function waitForPurchasesListLoaded(page: Page) {
   await page
-    .locator('section[data-purchases-list][data-loaded="true"]')
+    .locator(
+      `[data-testid="${testIds.purchasesList.root}"][data-loaded="true"]`,
+    )
     .waitFor({ state: 'attached', timeout: 10_000 });
 }
 
-async function waitForVisitsListLoaded(page: Page) {
+export async function waitForVisitsListLoaded(page: Page) {
   await page
-    .locator('section[data-visits-list][data-loaded="true"]')
+    .locator(`[data-testid="${testIds.visitsList.root}"][data-loaded="true"]`)
     .waitFor({ state: 'attached', timeout: 10_000 });
 }
 
@@ -31,7 +39,7 @@ async function collectCustomerIds(
   prefix: string,
 ): Promise<string[]> {
   await waitForCustomersListLoaded(page);
-  return page.locator('li[data-customer-id]').evaluateAll(
+  return page.getByTestId(testIds.customersList.row).evaluateAll(
     (items, namePrefix) =>
       items
         .filter(
@@ -49,7 +57,7 @@ async function collectMaterialIds(
   prefix: string,
 ): Promise<string[]> {
   await waitForMaterialsListLoaded(page);
-  return page.locator('li[data-material-id]').evaluateAll(
+  return page.getByTestId(testIds.materialsList.row).evaluateAll(
     (items, namePrefix) =>
       items
         .filter(
@@ -67,7 +75,7 @@ async function collectPurchaseIds(
   prefix: string,
 ): Promise<string[]> {
   await waitForPurchasesListLoaded(page);
-  return page.locator('li[data-purchase-id]').evaluateAll(
+  return page.getByTestId(testIds.purchasesList.row).evaluateAll(
     (items, namePrefix) =>
       items
         .filter(
@@ -82,17 +90,39 @@ async function collectPurchaseIds(
 
 async function collectVisitIds(page: Page, prefix: string): Promise<string[]> {
   await waitForVisitsListLoaded(page);
-  return page.locator('li[data-visit-id]').evaluateAll(
-    (items, namePrefix) =>
-      items
-        .filter(
-          (li) =>
-            Boolean(li.textContent) && li.textContent.includes(namePrefix),
-        )
-        .map((li) => li.getAttribute('data-visit-id'))
-        .filter((id): id is string => Boolean(id)),
-    prefix,
-  );
+  return page
+    .locator(`[data-testid="${testIds.visitsList.row}"][data-visit-id]`)
+    .evaluateAll(
+      (items, namePrefix) =>
+        items
+          .filter(
+            (li) =>
+              Boolean(li.textContent) && li.textContent.includes(namePrefix),
+          )
+          .map((li) => li.getAttribute('data-visit-id'))
+          .filter((id): id is string => Boolean(id)),
+      prefix,
+    );
+}
+
+async function collectVisitDraftIds(
+  page: Page,
+  prefix: string,
+): Promise<string[]> {
+  await waitForVisitsListLoaded(page);
+  return page
+    .locator(`[data-testid="${testIds.visitsList.row}"][data-visit-draft-id]`)
+    .evaluateAll(
+      (items, namePrefix) =>
+        items
+          .filter(
+            (li) =>
+              Boolean(li.textContent) && li.textContent.includes(namePrefix),
+          )
+          .map((li) => li.getAttribute('data-visit-draft-id'))
+          .filter((id): id is string => Boolean(id)),
+      prefix,
+    );
 }
 
 export async function cleanupCustomersByPrefix(page: Page, prefix: string) {
@@ -102,10 +132,7 @@ export async function cleanupCustomersByPrefix(page: Page, prefix: string) {
     await page.goto('/customers');
     for (const id of await collectCustomerIds(page, prefix)) ids.add(id);
 
-    await page
-      .getByRole('tab', { name: /archived/i })
-      .click()
-      .catch(() => undefined);
+    await page.getByTestId(testIds.customersList.archivedTab).click();
     for (const id of await collectCustomerIds(page, prefix)) ids.add(id);
 
     console.log(
@@ -144,10 +171,7 @@ export async function cleanupMaterialsByPrefix(page: Page, prefix: string) {
     await page.goto('/materials');
     for (const id of await collectMaterialIds(page, prefix)) ids.add(id);
 
-    await page
-      .getByRole('button', { name: /archived/i })
-      .click()
-      .catch(() => undefined);
+    await page.getByTestId(testIds.materialsList.archivedButton).click();
     for (const id of await collectMaterialIds(page, prefix)) ids.add(id);
 
     console.log(
@@ -245,5 +269,31 @@ export async function cleanupVisitsByPrefix(page: Page, prefix: string) {
     }
   } catch (error) {
     console.warn('[cleanup] cleanupVisitsByPrefix failed:', error);
+  }
+}
+
+export async function cleanupVisitDraftsByPrefix(page: Page, prefix: string) {
+  try {
+    const ids = new Set<string>();
+
+    await page.goto('/visits');
+    for (const id of await collectVisitDraftIds(page, prefix)) ids.add(id);
+
+    console.log(
+      `[cleanup] found ${ids.size} visit draft(s) matching "${prefix}" to discard`,
+    );
+
+    for (const id of ids) {
+      try {
+        await page.goto(`/visits/drafts/${id}/edit`);
+        page.once('dialog', (dialog) => dialog.accept());
+        await page.getByTestId(testIds.visitDraftEdit.discardButton).click();
+        await waitForVisitsListLoaded(page);
+      } catch (error) {
+        console.warn('[cleanup] discard visit draft failed:', { id, error });
+      }
+    }
+  } catch (error) {
+    console.warn('[cleanup] cleanupVisitDraftsByPrefix failed:', error);
   }
 }
