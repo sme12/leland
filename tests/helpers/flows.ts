@@ -46,15 +46,11 @@ export async function selectExistingPurchaseMaterial(
     testIds.purchaseMaterialSelect.select,
   );
 
-  await expect(materialSelect).toContainText(materialName);
-  const materialValue = await materialSelect.evaluate(
-    (select, name) =>
-      Array.from((select as HTMLSelectElement).options).find(
-        (option) => option.textContent.trim() === name,
-      )?.value,
-    materialName,
-  );
+  // Option label is "<name> · <category> · <unit>", so match by substring.
+  const option = materialSelect.locator('option', { hasText: materialName });
+  await expect(option).toHaveCount(1);
 
+  const materialValue = await option.getAttribute('value');
   expect(materialValue).toBeTruthy();
   await materialSelect.selectOption(materialValue ?? '');
 }
