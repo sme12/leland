@@ -49,8 +49,8 @@ export async function selectExistingPurchaseMaterial(
   await expect(materialSelect).toContainText(materialName);
   const materialValue = await materialSelect.evaluate(
     (select, name) =>
-      Array.from((select as HTMLSelectElement).options).find((option) =>
-        option.textContent.includes(name),
+      Array.from((select as HTMLSelectElement).options).find(
+        (option) => option.textContent.trim() === name,
       )?.value,
     materialName,
   );
