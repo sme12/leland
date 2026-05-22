@@ -112,6 +112,10 @@ export const resources = {
           active: 'Active',
           archived: 'Archived',
         },
+        stock: {
+          remaining: 'Remaining {{value}}',
+          breakdown: 'Purchased {{purchased}} · Used {{used}}',
+        },
         fields: {
           name: 'Name',
           category: 'Category',
@@ -389,6 +393,10 @@ export const resources = {
         status: {
           active: 'Активные',
           archived: 'Архив',
+        },
+        stock: {
+          remaining: 'Осталось {{value}}',
+          breakdown: 'Куплено {{purchased}} · Использовано {{used}}',
         },
         fields: {
           name: 'Название',

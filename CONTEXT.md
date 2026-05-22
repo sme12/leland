@@ -33,7 +33,7 @@ The full set of **Materials** belonging to one **Stylist**. Distinct from **Stoc
 _Avoid_: Inventory, library.
 
 **Stock** / **Remaining**:
-Derived running quantity per **Material**: sum of **Purchase** `totalQuantity` minus sum of **VisitLineItem** `amount`. Can be negative — that means usage was recorded before the corresponding **Purchase** was entered (a known and accepted state).
+Derived running quantity per **Material** across all recorded time: sum of **Purchase** `totalQuantity` minus sum of **VisitLineItem** `amount`. Only **Purchases** and published **VisitLineItems** affect **Stock**; there is no separate correction event. **Stock** is not tracked per individual **Purchase**. Can be negative — that means usage was recorded before the corresponding **Purchase** was entered (a known and accepted state).
 _Avoid_: Inventory, on-hand.
 
 ### Stock acquisition

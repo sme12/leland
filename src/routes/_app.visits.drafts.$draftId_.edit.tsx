@@ -10,6 +10,7 @@ import { useTranslation } from 'react-i18next';
 
 import { preventImplicitSubmit } from '#/components/prevent-implicit-submit';
 import { customerKeys } from '#/features/customers/customer-queries';
+import { invalidateMaterialQueries } from '#/features/materials/material-queries';
 import {
   applyVisitServerError,
   createEmptyVisitFormValues,
@@ -144,7 +145,10 @@ function EditVisitDraftRoute() {
       });
     },
     onSuccess: async (visit) => {
-      await queryClient.invalidateQueries({ queryKey: visitKeys.root });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: visitKeys.root }),
+        invalidateMaterialQueries(queryClient),
+      ]);
       queryClient.removeQueries({
         queryKey: visitKeys.draftDetail(userKey, draftId),
       });

@@ -7,7 +7,10 @@ import { ArrowLeft } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { materialKeys } from '#/features/materials/material-queries';
+import {
+  invalidateMaterialQueries,
+  materialKeys,
+} from '#/features/materials/material-queries';
 import { PurchaseForm } from '#/features/purchases/purchase-form';
 import { PurchaseMaterialSelect } from '#/features/purchases/purchase-material-select';
 import type { PurchaseMaterialOption } from '#/features/purchases/purchase-material-select';
@@ -72,6 +75,7 @@ function EditPurchaseRoute() {
         queryClient.invalidateQueries({
           queryKey: purchaseKeys.all(userKey),
         }),
+        invalidateMaterialQueries(queryClient),
         invalidateVisitMaterialQueries({
           queryClient,
           userId: userKey,

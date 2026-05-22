@@ -38,6 +38,7 @@ export const testIds = {
     archivedButton: 'materials-status-archived',
     categoryToggle: 'materials-category-toggle',
     row: 'material-row',
+    stockSummary: 'material-stock-summary',
   },
   purchaseMaterialSelect: {
     select: 'purchase-material-select',

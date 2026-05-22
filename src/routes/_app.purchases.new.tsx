@@ -8,7 +8,10 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { MaterialForm } from '#/features/materials/material-form';
-import { materialKeys } from '#/features/materials/material-queries';
+import {
+  invalidateMaterialQueries,
+  materialKeys,
+} from '#/features/materials/material-queries';
 import { PurchaseForm } from '#/features/purchases/purchase-form';
 import { PurchaseMaterialSelect } from '#/features/purchases/purchase-material-select';
 import { purchaseKeys } from '#/features/purchases/purchase-queries';
@@ -87,9 +90,7 @@ function NewPurchaseRoute() {
       createMaterialFn({ data: values }),
     onSuccess: async (material) => {
       await Promise.all([
-        queryClient.invalidateQueries({
-          queryKey: materialKeys.root,
-        }),
+        invalidateMaterialQueries(queryClient),
         invalidateVisitMaterialQueries({ queryClient, userId: userKey }),
       ]);
       setCreatedMaterialFallback(material);
@@ -112,6 +113,7 @@ function NewPurchaseRoute() {
         queryClient.invalidateQueries({
           queryKey: purchaseKeys.all(userKey),
         }),
+        invalidateMaterialQueries(queryClient),
         invalidateVisitMaterialQueries({
           queryClient,
           userId: userKey,

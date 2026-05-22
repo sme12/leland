@@ -6,6 +6,7 @@ import { useServerFn } from '@tanstack/react-start';
 import { ArrowLeft, Pencil, Trash2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
+import { invalidateMaterialQueries } from '#/features/materials/material-queries';
 import { visitKeys } from '#/features/visits/visit-queries';
 import { deleteVisit, getVisit } from '#/server/visits';
 import { formatEuro, formatQuantity } from '#/shared/purchase-format';
@@ -34,7 +35,10 @@ function VisitDetailRoute() {
   const deleteMutation = useMutation({
     mutationFn: () => deleteVisitFn({ data: { id: visitId } }),
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: visitKeys.root });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: visitKeys.root }),
+        invalidateMaterialQueries(queryClient),
+      ]);
       await navigate({ to: '/visits' });
     },
     onError: (error) => {

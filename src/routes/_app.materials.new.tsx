@@ -7,7 +7,7 @@ import { ArrowLeft } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 import { MaterialForm } from '#/features/materials/material-form';
-import { materialKeys } from '#/features/materials/material-queries';
+import { invalidateMaterialQueries } from '#/features/materials/material-queries';
 import { invalidateVisitMaterialQueries } from '#/features/visits/visit-query-invalidation';
 import { createMaterial } from '#/server/materials';
 import type { MaterialCreateValues } from '#/shared/schemas/material';
@@ -29,9 +29,7 @@ function NewMaterialRoute() {
       createMaterialFn({ data: values }),
     onSuccess: async () => {
       await Promise.all([
-        queryClient.invalidateQueries({
-          queryKey: materialKeys.root,
-        }),
+        invalidateMaterialQueries(queryClient),
         invalidateVisitMaterialQueries({ queryClient, userId: userKey }),
       ]);
       await navigate({ to: '/materials' });
