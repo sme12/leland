@@ -27,8 +27,8 @@ export default defineConfig({
   webServer: process.env.PLAYWRIGHT_BASE_URL
     ? undefined
     : {
-        command: 'pnpm dev',
-        url: 'http://localhost:3000',
+        command: 'pnpm exec vite dev --port 3000 --strictPort',
+        url: 'http://localhost:3000/api/test/visits/__ready__',
         reuseExistingServer: !process.env.CI,
       },
   projects: [
