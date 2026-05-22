@@ -286,7 +286,6 @@ describe('computePeriodTotals', () => {
 describe('computeMaterialAggregate', () => {
   it('computes purchased, used, and remaining for one material', () => {
     const aggregate = computeMaterialAggregate(
-      { id: 'material-a' },
       [
         purchase({
           id: 'p1',
@@ -300,8 +299,8 @@ describe('computeMaterialAggregate', () => {
         }),
       ],
       [
-        { materialId: 'material-a', amount: '40', totalCost: '8' },
-        { materialId: 'material-a', amount: '15.5', totalCost: '3.1' },
+        { materialId: 'material-a', amount: '40' },
+        { materialId: 'material-a', amount: '15.5' },
       ],
     );
 
@@ -310,34 +309,8 @@ describe('computeMaterialAggregate', () => {
     expect(aggregate.remaining.toString()).toBe('94.5');
   });
 
-  it('ignores unrelated purchase and line-item rows', () => {
-    const aggregate = computeMaterialAggregate(
-      { id: 'material-a' },
-      [
-        purchase({
-          id: 'p1',
-          materialId: 'material-a',
-          totalQuantity: '100',
-        }),
-        purchase({
-          id: 'p2',
-          materialId: 'material-b',
-          totalQuantity: '999',
-        }),
-      ],
-      [
-        { materialId: 'material-a', amount: '20', totalCost: '4' },
-        { materialId: 'material-b', amount: '999', totalCost: '999' },
-      ],
-    );
-
-    expect(aggregate.purchased.toString()).toBe('100');
-    expect(aggregate.used.toString()).toBe('20');
-    expect(aggregate.remaining.toString()).toBe('80');
-  });
-
   it('returns zeros when the material has no purchases and no usage', () => {
-    const aggregate = computeMaterialAggregate({ id: 'material-a' }, [], []);
+    const aggregate = computeMaterialAggregate([], []);
 
     expect(aggregate.purchased.toString()).toBe('0');
     expect(aggregate.used.toString()).toBe('0');
@@ -346,7 +319,6 @@ describe('computeMaterialAggregate', () => {
 
   it('allows negative remaining', () => {
     const aggregate = computeMaterialAggregate(
-      { id: 'material-a' },
       [
         purchase({
           id: 'p1',
@@ -354,7 +326,7 @@ describe('computeMaterialAggregate', () => {
           totalQuantity: '10',
         }),
       ],
-      [{ materialId: 'material-a', amount: '12.5', totalCost: '2.50' }],
+      [{ materialId: 'material-a', amount: '12.5' }],
     );
 
     expect(aggregate.remaining.toString()).toBe('-2.5');

@@ -1,12 +1,12 @@
 import Decimal from 'decimal.js';
 
 import type {
-  CostLineItem,
   CostPurchase,
   MaterialAggregate,
-  MaterialForAggregate,
   PeriodRange,
   PeriodTotals,
+  StockLineItem,
+  StockPurchase,
   VisitWithItems,
 } from './types';
 
@@ -96,21 +96,11 @@ export function computePeriodTotals(
 }
 
 export function computeMaterialAggregate(
-  material: MaterialForAggregate,
-  purchases: readonly CostPurchase[],
-  lineItems: readonly CostLineItem[],
+  purchases: readonly StockPurchase[],
+  lineItems: readonly StockLineItem[],
 ): MaterialAggregate {
-  const materialPurchases = purchases.filter(
-    (purchase) => purchase.materialId === material.id,
-  );
-  const materialLineItems = lineItems.filter(
-    (lineItem) => lineItem.materialId === material.id,
-  );
-  const purchased = sumDecimal(
-    materialPurchases,
-    (purchase) => purchase.totalQuantity,
-  );
-  const used = sumDecimal(materialLineItems, (lineItem) => lineItem.amount);
+  const purchased = sumDecimal(purchases, (purchase) => purchase.totalQuantity);
+  const used = sumDecimal(lineItems, (lineItem) => lineItem.amount);
 
   return {
     purchased,

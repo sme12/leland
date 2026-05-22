@@ -7,6 +7,7 @@ import { ArrowLeft, Pencil, Trash2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 import { purchaseKeys } from '#/features/purchases/purchase-queries';
+import { invalidateMaterialQueries } from '#/features/materials/material-queries';
 import { invalidateVisitMaterialQueries } from '#/features/visits/visit-query-invalidation';
 import { deletePurchase, getPurchase } from '#/server/purchases';
 import {
@@ -44,6 +45,7 @@ function PurchaseDetailRoute() {
         queryClient.invalidateQueries({
           queryKey: purchaseKeys.all(userKey),
         }),
+        invalidateMaterialQueries(queryClient),
         invalidateVisitMaterialQueries({
           queryClient,
           userId: userKey,
