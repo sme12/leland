@@ -10,7 +10,9 @@ import type { VisitMaterialPickerDto } from '#/server/visits';
 import { testIds } from '#/testing/test-ids';
 import {
   createEmptyVisitFormValues,
+  getVisitDraftPublishMissingKeys,
   getVisitFormMissingKeys,
+  toVisitDraftPublishMutationInput,
   VisitFormBody,
 } from './visit-form';
 import type { VisitFormFields } from './visit-form';
@@ -42,6 +44,45 @@ describe('getVisitFormMissingKeys', () => {
     };
 
     expect(getVisitFormMissingKeys(values)).toContain('validation.money');
+  });
+});
+
+describe('getVisitDraftPublishMissingKeys', () => {
+  it('validates draft publish as a visit while keeping draft wording', () => {
+    const values = {
+      ...createEmptyVisitFormValues('draft'),
+      customerId: 'customer-id',
+      serviceId: 'service-id',
+      date: '2999-01-01',
+      items: [{ materialId: '', amount: '' }],
+    };
+
+    expect(getVisitDraftPublishMissingKeys(values)).toEqual([
+      'visit.missing.estimatedPriceRequired',
+      'visit.missing.publishDateFuture',
+      'visit.missing.material',
+      'visit.missing.amount',
+    ]);
+  });
+});
+
+describe('toVisitDraftPublishMutationInput', () => {
+  it('keeps current material rows for server-side publish validation', () => {
+    const values = {
+      ...createEmptyVisitFormValues('draft'),
+      customerId: 'customer-id',
+      serviceId: 'service-id',
+      priceCharged: '75',
+      items: [
+        { id: 'estimate-id', materialId: 'material-id', amount: '20' },
+        { materialId: '', amount: '' },
+      ],
+    };
+
+    expect(toVisitDraftPublishMutationInput(values).items).toEqual([
+      { id: 'estimate-id', materialId: 'material-id', amount: '20' },
+      { materialId: '', amount: '' },
+    ]);
   });
 });
 

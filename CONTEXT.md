@@ -73,7 +73,7 @@ The amount the **Stylist** expects to charge for a **Visit Draft**.
 _Avoid_: Price charged, revenue, payment.
 
 **Publish**:
-The act of turning a **Visit Draft** into a **Visit**.
+The act of turning the current contents of a **Visit Draft** into a **Visit**.
 _Avoid_: Save, complete, finalize.
 
 **Discard**:
@@ -113,3 +113,4 @@ _Avoid_: Usage, consumption, line, charge.
 - **"Invoice"** vs **"Receipt"** vs **"Bill"** — colloquially mixed. Resolved: use **Receipt** (matches the Finnish _Kuitti_ on the source documents). **Receipt** is _never_ persisted.
 - **"Inventory"** was tempting for both **Catalog** and **Stock**. Resolved: they're different concepts — **Catalog** is the list of material _types_, **Stock** is the running quantity. Don't say "inventory" for either.
 - **"Draft visit"** sounded like a subtype of **Visit**. Resolved: use **Visit Draft** for the provisional estimate; it is not a **Visit** until published.
+- **"Publish"** and **"Save"** were easy to conflate. Resolved: **Publish** uses the current **Visit Draft** contents and does not require a separate **Save**.

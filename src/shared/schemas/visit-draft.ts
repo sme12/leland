@@ -3,6 +3,7 @@ import { z } from 'zod/v4';
 import { isPastHelsinkiDate, isValidDateOnly } from '../date';
 import { moneyStringSchema } from './decimal';
 import { quantityStringSchema } from './purchase';
+import { visitDateSchema } from './visit';
 
 const dateOnlyPattern = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -80,10 +81,10 @@ export const visitDraftIdSchema = z
   })
   .strict();
 
-export const visitDraftPublishSchema = z
-  .object({
-    id: z.string().min(1, { message: 'validation.idRequired' }),
-    expectedUpdatedAt: expectedUpdatedAtSchema,
+export const visitDraftPublishSchema = visitDraftUpdateServerSchema
+  .extend({
+    date: visitDateSchema,
+    estimatedPrice: moneyStringSchema,
   })
   .strict();
 

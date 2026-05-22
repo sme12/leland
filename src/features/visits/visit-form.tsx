@@ -620,6 +620,22 @@ export function toVisitDraftMutationInput(values: VisitFormFields) {
   };
 }
 
+export function toVisitDraftPublishMutationInput(values: VisitFormFields) {
+  return {
+    ...(values.id ? { id: values.id } : {}),
+    customerId: values.customerId,
+    serviceId: values.serviceId,
+    date: values.date,
+    estimatedPrice: values.priceCharged,
+    note: values.note,
+    items: values.items.map((item) => ({
+      ...(item.id ? { id: item.id } : {}),
+      materialId: item.materialId,
+      amount: item.amount,
+    })),
+  };
+}
+
 function toDraftItems(values: VisitFormFields) {
   return values.items
     .filter((item) => item.materialId && isPositiveDecimal(item.amount))
@@ -684,19 +700,19 @@ export function getVisitFormMissingKeys(values: VisitFormFields) {
 }
 
 export function getVisitDraftPublishMissingKeys(values: VisitFormFields) {
-  const missing: Array<string> = [];
-  const estimatedPrice = values.priceCharged.trim();
+  return getVisitFormMissingKeys({ ...values, recordType: 'visit' }).map(
+    (key) => {
+      if (key === 'visit.missing.priceCharged') {
+        return 'visit.missing.estimatedPriceRequired';
+      }
 
-  if (!estimatedPrice) {
-    missing.push('visit.missing.estimatedPriceRequired');
-  } else if (!moneyStringSchema.safeParse(estimatedPrice).success) {
-    missing.push('validation.money');
-  }
-  if (values.date && isFutureHelsinkiDate(values.date)) {
-    missing.push('visit.missing.publishDateFuture');
-  }
+      if (key === 'visit.missing.dateFuture') {
+        return 'visit.missing.publishDateFuture';
+      }
 
-  return [...new Set(missing)];
+      return key;
+    },
+  );
 }
 
 type SetFormError = (

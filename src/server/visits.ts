@@ -619,21 +619,31 @@ export const publishVisitDraft = createServerFn({ method: 'POST' })
         throw new Error('visitDraft.notFound');
       }
 
-      if (!draft.estimatedPrice) {
-        throw new Error('visitDraft.estimatedPriceRequired');
-      }
-
       const visitInput = visitCreateSchema.parse({
-        customerId: draft.customerId,
-        serviceId: draft.serviceId,
-        date: formatDateOnly(draft.date),
-        priceCharged: draft.estimatedPrice.toString(),
-        note: draft.note,
-        items: draft.materialEstimates.map((item) => ({
+        customerId: data.customerId,
+        serviceId: data.serviceId,
+        date: data.date,
+        priceCharged: data.estimatedPrice,
+        note: data.note,
+        items: data.items.map((item) => ({
           materialId: item.materialId,
-          amount: item.amount.toString(),
+          amount: item.amount,
         })),
       });
+      await ensureCustomer(
+        db,
+        visitInput.customerId,
+        visitInput.customerId === draft.customerId,
+      );
+      await ensureService(
+        db,
+        visitInput.serviceId,
+        visitInput.serviceId === draft.serviceId,
+      );
+
+      const currentEstimatesById = new Map(
+        draft.materialEstimates.map((item) => [item.id, item]),
+      );
       const lineItems: Array<{
         materialId: string;
         amount: string;
@@ -641,12 +651,16 @@ export const publishVisitDraft = createServerFn({ method: 'POST' })
         totalCost: string;
       }> = [];
 
-      for (const item of visitInput.items) {
+      for (const item of data.items) {
+        const existing = item.id ? currentEstimatesById.get(item.id) : null;
+
         lineItems.push({
           materialId: item.materialId,
           amount: item.amount,
           ...(await computeLockedCosts(db, item.materialId, item.amount, {
-            allowArchived: true,
+            allowArchived: Boolean(
+              existing && existing.materialId === item.materialId,
+            ),
           })),
         });
       }

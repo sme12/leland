@@ -16,6 +16,7 @@ import {
   getVisitDraftPublishMissingKeys,
   getVisitFormMissingKeys,
   toVisitDraftMutationInput,
+  toVisitDraftPublishMutationInput,
   visitFormResolver,
   VisitFormBody,
 } from '#/features/visits/visit-form';
@@ -129,13 +130,14 @@ function EditVisitDraftRoute() {
     },
   });
   const publishMutation = useMutation({
-    mutationFn: () => {
+    mutationFn: (values: VisitFormFields) => {
       if (!draftQuery.data) {
         throw new Error('visitDraft.notFound');
       }
 
       return publishVisitDraftFn({
         data: {
+          ...toVisitDraftPublishMutationInput(values),
           id: draftId,
           expectedUpdatedAt: draftQuery.data.updatedAt,
         },
@@ -149,10 +151,10 @@ function EditVisitDraftRoute() {
       queryClient.setQueryData(visitKeys.detail(userKey, visit.id), visit);
       await navigate({ to: '/visits/$visitId', params: { visitId: visit.id } });
     },
-    onError: (error) => {
+    onError: (error, values) => {
       const mapped = applyVisitServerError({
         error,
-        values: form.getValues(),
+        values,
         setError: form.setError,
       });
 
@@ -203,15 +205,10 @@ function EditVisitDraftRoute() {
     () => getVisitFormMissingKeys({ ...watchedValues, recordType: 'draft' }),
     [watchedValues],
   );
-  const publishMissingKeys = useMemo(() => {
-    const keys = getVisitDraftPublishMissingKeys(watchedValues);
-
-    if (form.formState.isDirty) {
-      keys.push('visit.missing.unsavedDraftChanges');
-    }
-
-    return keys;
-  }, [form.formState.isDirty, watchedValues]);
+  const publishMissingKeys = useMemo(
+    () => getVisitDraftPublishMissingKeys(watchedValues),
+    [watchedValues],
+  );
   const isLoading =
     draftQuery.isPending ||
     customersQuery.isPending ||
@@ -245,6 +242,14 @@ function EditVisitDraftRoute() {
     ) {
       discardMutation.mutate();
     }
+  }
+
+  function publishCurrentDraft() {
+    if (isPublishDisabled) {
+      return;
+    }
+
+    publishMutation.mutate({ ...form.getValues(), recordType: 'draft' });
   }
 
   return (
@@ -325,7 +330,7 @@ function EditVisitDraftRoute() {
                   <button
                     type="button"
                     data-testid={testIds.visitDraftEdit.publishButton}
-                    onClick={() => publishMutation.mutate()}
+                    onClick={publishCurrentDraft}
                     disabled={isPublishDisabled}
                     className="inline-flex h-11 items-center gap-2 rounded-md bg-foreground px-4 text-sm font-semibold text-background outline-none transition hover:opacity-90 focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-60"
                   >

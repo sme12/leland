@@ -267,7 +267,6 @@ export const resources = {
           dateFuture: 'Visit date cannot be in the future.',
           datePast: 'Draft date cannot be in the past.',
           publishDateFuture: 'Draft can be published on its visit date.',
-          unsavedDraftChanges: 'Save draft changes before publishing.',
         },
         fields: {
           date: 'Date',
@@ -547,8 +546,6 @@ export const resources = {
           datePast: 'Дата черновика не может быть в прошлом.',
           publishDateFuture:
             'Черновик можно опубликовать в дату будущего визита.',
-          unsavedDraftChanges:
-            'Сохраните изменения черновика перед публикацией.',
         },
         fields: {
           date: 'Дата',

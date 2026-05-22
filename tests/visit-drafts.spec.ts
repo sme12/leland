@@ -15,7 +15,7 @@ import { clickAppNav } from './helpers/navigation';
 skipIfE2eEnvMissing();
 registerE2eCleanup();
 
-test('visit draft can be saved, edited, blocked while future-dated, and published', async ({
+test('visit draft can be saved, edited, blocked while future-dated, and published without a separate save', async ({
   page,
 }) => {
   test.setTimeout(90_000);
@@ -47,16 +47,7 @@ test('visit draft can be saved, edited, blocked while future-dated, and publishe
 
   await page.getByTestId(testIds.visitForm.dateInput).fill(helsinkiDateOnly());
   await page.getByTestId(testIds.visitForm.priceInput).fill('75');
-  await page.getByTestId(testIds.visitDraftEdit.saveButton).click();
 
-  await expect(page.getByTestId(testIds.visitsList.root)).toContainText(
-    customerName,
-  );
-
-  await clickVisitRow(page, customerName);
-  await expect(page.getByTestId(testIds.visitForm.priceInput)).toHaveValue(
-    '75',
-  );
   await expect(
     page.getByTestId(testIds.visitDraftEdit.publishButton),
   ).toBeEnabled();
