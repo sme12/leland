@@ -20,6 +20,7 @@ ESLint will catch these, but knowing them upfront prevents wasted work:
 - [Setup, dev, build, deploy](.agents/workflows.md)
 - [Testing (Vitest + Playwright)](.agents/testing.md)
 - [Code conventions](.agents/conventions.md)
+- [MCP purchase import](docs/mcp-purchase-import.md)
 - [Pull requests & commits](.agents/contributing.md)
 - [Troubleshooting](.agents/troubleshooting.md)
 
