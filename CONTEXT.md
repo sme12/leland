@@ -46,6 +46,10 @@ _Avoid_: Restock, acquisition, transaction, supply event.
 An external document — PDF, photo, email — attesting to one or more **Purchases**. **Not a persisted entity in Leland.** Treated as ephemeral input to the import flow; vendor, invoice number, totals, and VAT are intentionally discarded.
 _Avoid_: Invoice, bill, document — and explicitly _do not_ model this as a Leland entity.
 
+**Receipt date**:
+The **Receipt**'s invoice/issue date (Finnish: _Laskun pvm_) — the date the vendor billed for the items. This is what becomes `Purchase.date` for every **Purchase** created from that **Receipt**. **Not** the delivery date (_Toimituspvm_) or the payment due date (_Eräpäivä_); those are discarded along with the rest of the **Receipt** metadata.
+_Avoid_: Delivery date, payment date, transaction date.
+
 **Import**:
 The act of turning a **Receipt**'s contents into one or more **Purchase** rows (creating new **Materials** inline when needed).
 _Avoid_: Upload, sync, ingest.
