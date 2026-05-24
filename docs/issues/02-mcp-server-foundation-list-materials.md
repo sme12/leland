@@ -17,7 +17,7 @@ Scope (per `docs/mcp-purchase-import-plan.md` §2–§5 and Q5, Q8, Q9, Q10, Q16
 - **Unauthenticated behaviour.** Any request to `/mcp` without a valid Clerk token returns `401` with a `WWW-Authenticate` challenge pointing at the protected-resource metadata URL.
 - **`leland_list_materials` tool.** Registers with name `leland_list_materials`, annotations `readOnlyHint: true, idempotentHint: true, destructiveHint: false, openWorldHint: true`, the exact tool description from `docs/mcp-purchase-import-plan.md` §"Tool descriptions (v1)", and:
   - Input: `{ includeArchived?: boolean }` (default `false`).
-  - Output schema declared so clients get structured content: `Array<{ id, name, category, unitOfMeasure, isArchived }>`.
+  - Output schema declared so clients get structured content: `{ materials: Array<{ id, name, category, unitOfMeasure, isArchived }> }` (wrapped in an object because MCP `structuredContent` requires one).
   - Reads through `getScopedDb(userId)` so the response is automatically scoped to the calling Stylist.
   - Ordered by `(category asc, name asc, createdAt asc)` to match the existing UI ordering in `src/server/materials.ts`.
   - When the Stylist's Catalog exceeds 500 Materials, returns `isError: true` with structured `code: "catalog_too_large"` (Q24).

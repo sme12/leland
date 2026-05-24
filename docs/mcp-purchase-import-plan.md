@@ -99,7 +99,7 @@ These are the exact strings the MCP server registers. They are the v1 contract f
 
 - `includeArchived?: boolean` — `Default false. Set to true when matching Receipt lines against the Catalog so you can find archived Materials and avoid creating duplicate entries.`
 
-**Output:** `Array<{ id: string, name: string, category: MaterialCategory, unitOfMeasure: UnitOfMeasure, isArchived: boolean }>`, ordered by `(category asc, name asc, createdAt asc)` — matching the existing UI ordering in [src/server/materials.ts](../src/server/materials.ts) so the LLM sees a deterministic list.
+**Output:** `{ materials: Array<{ id: string, name: string, category: MaterialCategory, unitOfMeasure: UnitOfMeasure, isArchived: boolean }> }`, ordered by `(category asc, name asc, createdAt asc)` — matching the existing UI ordering in [src/server/materials.ts](../src/server/materials.ts) so the LLM sees a deterministic list. Wrapped in a `materials` field because MCP `structuredContent` requires a JSON object, not a top-level array.
 
 **Error:** When the **Stylist**'s **Catalog** exceeds 500 **Materials**, returns `isError: true` with `code: "catalog_too_large"`. v1 has no search/narrowing tool — v2 territory.
 

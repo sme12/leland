@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SignOutRouteImport } from './routes/sign-out'
 import { Route as SignInRouteImport } from './routes/sign-in'
+import { Route as McpRouteImport } from './routes/mcp'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as AppIndexRouteImport } from './routes/_app.index'
 import { Route as SignInSplatRouteImport } from './routes/sign-in.$'
@@ -18,6 +19,7 @@ import { Route as AppVisitsRouteImport } from './routes/_app.visits'
 import { Route as AppPurchasesRouteImport } from './routes/_app.purchases'
 import { Route as AppMaterialsRouteImport } from './routes/_app.materials'
 import { Route as AppCustomersRouteImport } from './routes/_app.customers'
+import { Route as DotwellKnownOauthAuthorizationServerRouteImport } from './routes/[.]well-known.oauth-authorization-server'
 import { Route as AppVisitsIndexRouteImport } from './routes/_app.visits.index'
 import { Route as AppPurchasesIndexRouteImport } from './routes/_app.purchases.index'
 import { Route as AppMaterialsIndexRouteImport } from './routes/_app.materials.index'
@@ -29,6 +31,7 @@ import { Route as AppPurchasesPurchaseIdRouteImport } from './routes/_app.purcha
 import { Route as AppMaterialsNewRouteImport } from './routes/_app.materials.new'
 import { Route as AppCustomersNewRouteImport } from './routes/_app.customers.new'
 import { Route as AppCatalogServicesRouteImport } from './routes/_app.catalog.services'
+import { Route as DotwellKnownOauthProtectedResourceMcpRouteImport } from './routes/[.]well-known.oauth-protected-resource.mcp'
 import { Route as ApiTestVisitsVisitIdRouteImport } from './routes/api.test.visits.$visitId'
 import { Route as ApiTestPurchasesPurchaseIdRouteImport } from './routes/api.test.purchases.$purchaseId'
 import { Route as ApiTestMaterialsMaterialIdRouteImport } from './routes/api.test.materials.$materialId'
@@ -48,6 +51,11 @@ const SignOutRoute = SignOutRouteImport.update({
 const SignInRoute = SignInRouteImport.update({
   id: '/sign-in',
   path: '/sign-in',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const McpRoute = McpRouteImport.update({
+  id: '/mcp',
+  path: '/mcp',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AppRoute = AppRouteImport.update({
@@ -84,6 +92,12 @@ const AppCustomersRoute = AppCustomersRouteImport.update({
   path: '/customers',
   getParentRoute: () => AppRoute,
 } as any)
+const DotwellKnownOauthAuthorizationServerRoute =
+  DotwellKnownOauthAuthorizationServerRouteImport.update({
+    id: '/.well-known/oauth-authorization-server',
+    path: '/.well-known/oauth-authorization-server',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const AppVisitsIndexRoute = AppVisitsIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -139,6 +153,12 @@ const AppCatalogServicesRoute = AppCatalogServicesRouteImport.update({
   path: '/catalog/services',
   getParentRoute: () => AppRoute,
 } as any)
+const DotwellKnownOauthProtectedResourceMcpRoute =
+  DotwellKnownOauthProtectedResourceMcpRouteImport.update({
+    id: '/.well-known/oauth-protected-resource/mcp',
+    path: '/.well-known/oauth-protected-resource/mcp',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiTestVisitsVisitIdRoute = ApiTestVisitsVisitIdRouteImport.update({
   id: '/api/test/visits/$visitId',
   path: '/api/test/visits/$visitId',
@@ -199,13 +219,16 @@ const AppVisitsDraftsDraftIdEditRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof AppIndexRoute
+  '/mcp': typeof McpRoute
   '/sign-in': typeof SignInRouteWithChildren
   '/sign-out': typeof SignOutRoute
+  '/.well-known/oauth-authorization-server': typeof DotwellKnownOauthAuthorizationServerRoute
   '/customers': typeof AppCustomersRouteWithChildren
   '/materials': typeof AppMaterialsRouteWithChildren
   '/purchases': typeof AppPurchasesRouteWithChildren
   '/visits': typeof AppVisitsRouteWithChildren
   '/sign-in/$': typeof SignInSplatRoute
+  '/.well-known/oauth-protected-resource/mcp': typeof DotwellKnownOauthProtectedResourceMcpRoute
   '/catalog/services': typeof AppCatalogServicesRoute
   '/customers/new': typeof AppCustomersNewRoute
   '/materials/new': typeof AppMaterialsNewRoute
@@ -229,10 +252,13 @@ export interface FileRoutesByFullPath {
   '/visits/new/customer/new': typeof AppVisitsNewCustomerNewRoute
 }
 export interface FileRoutesByTo {
+  '/mcp': typeof McpRoute
   '/sign-in': typeof SignInRouteWithChildren
   '/sign-out': typeof SignOutRoute
+  '/.well-known/oauth-authorization-server': typeof DotwellKnownOauthAuthorizationServerRoute
   '/sign-in/$': typeof SignInSplatRoute
   '/': typeof AppIndexRoute
+  '/.well-known/oauth-protected-resource/mcp': typeof DotwellKnownOauthProtectedResourceMcpRoute
   '/catalog/services': typeof AppCatalogServicesRoute
   '/customers/new': typeof AppCustomersNewRoute
   '/materials/new': typeof AppMaterialsNewRoute
@@ -258,14 +284,17 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_app': typeof AppRouteWithChildren
+  '/mcp': typeof McpRoute
   '/sign-in': typeof SignInRouteWithChildren
   '/sign-out': typeof SignOutRoute
+  '/.well-known/oauth-authorization-server': typeof DotwellKnownOauthAuthorizationServerRoute
   '/_app/customers': typeof AppCustomersRouteWithChildren
   '/_app/materials': typeof AppMaterialsRouteWithChildren
   '/_app/purchases': typeof AppPurchasesRouteWithChildren
   '/_app/visits': typeof AppVisitsRouteWithChildren
   '/sign-in/$': typeof SignInSplatRoute
   '/_app/': typeof AppIndexRoute
+  '/.well-known/oauth-protected-resource/mcp': typeof DotwellKnownOauthProtectedResourceMcpRoute
   '/_app/catalog/services': typeof AppCatalogServicesRoute
   '/_app/customers/new': typeof AppCustomersNewRoute
   '/_app/materials/new': typeof AppMaterialsNewRoute
@@ -292,13 +321,16 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/mcp'
     | '/sign-in'
     | '/sign-out'
+    | '/.well-known/oauth-authorization-server'
     | '/customers'
     | '/materials'
     | '/purchases'
     | '/visits'
     | '/sign-in/$'
+    | '/.well-known/oauth-protected-resource/mcp'
     | '/catalog/services'
     | '/customers/new'
     | '/materials/new'
@@ -322,10 +354,13 @@ export interface FileRouteTypes {
     | '/visits/new/customer/new'
   fileRoutesByTo: FileRoutesByTo
   to:
+    | '/mcp'
     | '/sign-in'
     | '/sign-out'
+    | '/.well-known/oauth-authorization-server'
     | '/sign-in/$'
     | '/'
+    | '/.well-known/oauth-protected-resource/mcp'
     | '/catalog/services'
     | '/customers/new'
     | '/materials/new'
@@ -350,14 +385,17 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/_app'
+    | '/mcp'
     | '/sign-in'
     | '/sign-out'
+    | '/.well-known/oauth-authorization-server'
     | '/_app/customers'
     | '/_app/materials'
     | '/_app/purchases'
     | '/_app/visits'
     | '/sign-in/$'
     | '/_app/'
+    | '/.well-known/oauth-protected-resource/mcp'
     | '/_app/catalog/services'
     | '/_app/customers/new'
     | '/_app/materials/new'
@@ -383,8 +421,11 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   AppRoute: typeof AppRouteWithChildren
+  McpRoute: typeof McpRoute
   SignInRoute: typeof SignInRouteWithChildren
   SignOutRoute: typeof SignOutRoute
+  DotwellKnownOauthAuthorizationServerRoute: typeof DotwellKnownOauthAuthorizationServerRoute
+  DotwellKnownOauthProtectedResourceMcpRoute: typeof DotwellKnownOauthProtectedResourceMcpRoute
   ApiTestCustomersCustomerIdRoute: typeof ApiTestCustomersCustomerIdRoute
   ApiTestMaterialsMaterialIdRoute: typeof ApiTestMaterialsMaterialIdRoute
   ApiTestPurchasesPurchaseIdRoute: typeof ApiTestPurchasesPurchaseIdRoute
@@ -405,6 +446,13 @@ declare module '@tanstack/react-router' {
       path: '/sign-in'
       fullPath: '/sign-in'
       preLoaderRoute: typeof SignInRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/mcp': {
+      id: '/mcp'
+      path: '/mcp'
+      fullPath: '/mcp'
+      preLoaderRoute: typeof McpRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_app': {
@@ -455,6 +503,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/customers'
       preLoaderRoute: typeof AppCustomersRouteImport
       parentRoute: typeof AppRoute
+    }
+    '/.well-known/oauth-authorization-server': {
+      id: '/.well-known/oauth-authorization-server'
+      path: '/.well-known/oauth-authorization-server'
+      fullPath: '/.well-known/oauth-authorization-server'
+      preLoaderRoute: typeof DotwellKnownOauthAuthorizationServerRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/_app/visits/': {
       id: '/_app/visits/'
@@ -532,6 +587,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/catalog/services'
       preLoaderRoute: typeof AppCatalogServicesRouteImport
       parentRoute: typeof AppRoute
+    }
+    '/.well-known/oauth-protected-resource/mcp': {
+      id: '/.well-known/oauth-protected-resource/mcp'
+      path: '/.well-known/oauth-protected-resource/mcp'
+      fullPath: '/.well-known/oauth-protected-resource/mcp'
+      preLoaderRoute: typeof DotwellKnownOauthProtectedResourceMcpRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/api/test/visits/$visitId': {
       id: '/api/test/visits/$visitId'
@@ -721,8 +783,13 @@ const SignInRouteWithChildren =
 
 const rootRouteChildren: RootRouteChildren = {
   AppRoute: AppRouteWithChildren,
+  McpRoute: McpRoute,
   SignInRoute: SignInRouteWithChildren,
   SignOutRoute: SignOutRoute,
+  DotwellKnownOauthAuthorizationServerRoute:
+    DotwellKnownOauthAuthorizationServerRoute,
+  DotwellKnownOauthProtectedResourceMcpRoute:
+    DotwellKnownOauthProtectedResourceMcpRoute,
   ApiTestCustomersCustomerIdRoute: ApiTestCustomersCustomerIdRoute,
   ApiTestMaterialsMaterialIdRoute: ApiTestMaterialsMaterialIdRoute,
   ApiTestPurchasesPurchaseIdRoute: ApiTestPurchasesPurchaseIdRoute,
