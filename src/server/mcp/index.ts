@@ -47,24 +47,35 @@ function internalErrorResponse() {
   );
 }
 
+type CloseableMcpResource = {
+  close: () => Promise<void> | void;
+};
+
+async function closeMcpResource(resource: CloseableMcpResource | undefined) {
+  await resource?.close();
+}
+
 export async function handleMcpRequest(request: Request) {
-  const authContext = await authenticateMcpRequest(request);
-
-  if (!authContext) {
-    return unauthorizedMcpResponse(request);
-  }
-
-  if (request.method !== 'POST') {
-    return methodNotAllowedResponse();
-  }
-
-  const server = createLelandMcpServer(authContext.userId);
-  const transport = new WebStandardStreamableHTTPServerTransport({
-    sessionIdGenerator: undefined,
-    enableJsonResponse: true,
-  });
+  let server: ReturnType<typeof createLelandMcpServer> | undefined;
+  let transport: WebStandardStreamableHTTPServerTransport | undefined;
 
   try {
+    const authContext = await authenticateMcpRequest(request);
+
+    if (!authContext) {
+      return unauthorizedMcpResponse(request);
+    }
+
+    if (request.method !== 'POST') {
+      return methodNotAllowedResponse();
+    }
+
+    server = createLelandMcpServer(authContext.userId);
+    transport = new WebStandardStreamableHTTPServerTransport({
+      sessionIdGenerator: undefined,
+      enableJsonResponse: true,
+    });
+
     await server.connect(transport);
 
     return await transport.handleRequest(request, {
@@ -75,7 +86,9 @@ export async function handleMcpRequest(request: Request) {
 
     return internalErrorResponse();
   } finally {
-    await transport.close();
-    await server.close();
+    await Promise.allSettled([
+      closeMcpResource(transport),
+      closeMcpResource(server),
+    ]);
   }
 }

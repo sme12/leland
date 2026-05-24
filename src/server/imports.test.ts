@@ -485,6 +485,70 @@ describe('commitImport', () => {
     expect(harness.getPurchases()).toHaveLength(0);
   });
 
+  it('rejects same-batch existing then new items that resolve to the same Material', async () => {
+    const harness = createHarness([
+      material({ id: 'mat-color', name: 'Tint 7/0' }),
+    ]);
+
+    const error = await getImportError(
+      commit(
+        {
+          date: '2026-05-15',
+          items: [
+            existingItem('mat-color'),
+            newItem({
+              material: {
+                name: 'Tint 7/0',
+                category: 'color',
+                unitOfMeasure: 'ml',
+              },
+            }),
+          ],
+        },
+        harness,
+      ),
+    );
+
+    expect(error).toMatchObject({
+      code: 'duplicate_material',
+      lineIndex: 1,
+      conflictingLineIndex: 0,
+    });
+    expect(harness.getPurchases()).toHaveLength(0);
+  });
+
+  it('rejects same-batch new then existing items that resolve to the same Material', async () => {
+    const harness = createHarness([
+      material({ id: 'mat-color', name: 'Tint 7/0' }),
+    ]);
+
+    const error = await getImportError(
+      commit(
+        {
+          date: '2026-05-15',
+          items: [
+            newItem({
+              material: {
+                name: 'Tint 7/0',
+                category: 'color',
+                unitOfMeasure: 'ml',
+              },
+            }),
+            existingItem('mat-color'),
+          ],
+        },
+        harness,
+      ),
+    );
+
+    expect(error).toMatchObject({
+      code: 'duplicate_material',
+      lineIndex: 1,
+      conflictingLineIndex: 0,
+    });
+    expect(harness.getPurchases()).toHaveLength(0);
+  });
+
   it('rejects cross-Stylist material ids and rolls back earlier lines', async () => {
     const harness = createHarness([
       material({ id: 'mat-color', name: 'Tint 7/0' }),

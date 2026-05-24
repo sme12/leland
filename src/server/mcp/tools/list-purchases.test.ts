@@ -352,14 +352,16 @@ describe('leland_list_purchases', () => {
       },
     };
 
-    const result = await callListPurchases({ date: '2026-05-15' }, db);
+    try {
+      const result = await callListPurchases({ date: '2026-05-15' }, db);
 
-    expect(result.isError).toBe(true);
-    expect(result.structuredContent).toEqual({
-      code: 'internal_error',
-      message: 'Internal error while listing Purchases.',
-    });
-
-    consoleError.mockRestore();
+      expect(result.isError).toBe(true);
+      expect(result.structuredContent).toEqual({
+        code: 'internal_error',
+        message: 'Internal error while listing Purchases.',
+      });
+    } finally {
+      consoleError.mockRestore();
+    }
   });
 });

@@ -1,13 +1,13 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import type { ListMaterialsDb } from './list-materials';
+import type { ListMaterial, ListMaterialsDb } from './list-materials';
 import { callListMaterials } from './list-materials';
 
 type MaterialFixture = {
   id: string;
   name: string;
-  category: string;
-  unitOfMeasure: string;
+  category: ListMaterial['category'];
+  unitOfMeasure: ListMaterial['unitOfMeasure'];
   isArchived: boolean;
   createdAt: Date;
 };
@@ -168,14 +168,16 @@ describe('leland_list_materials', () => {
       },
     };
 
-    const result = await callListMaterials({}, db);
+    try {
+      const result = await callListMaterials({}, db);
 
-    expect(result.isError).toBe(true);
-    expect(result.structuredContent).toEqual({
-      code: 'internal_error',
-      message: 'Internal error while listing Materials.',
-    });
-
-    consoleError.mockRestore();
+      expect(result.isError).toBe(true);
+      expect(result.structuredContent).toEqual({
+        code: 'internal_error',
+        message: 'Internal error while listing Materials.',
+      });
+    } finally {
+      consoleError.mockRestore();
+    }
   });
 });

@@ -110,7 +110,7 @@ const listPurchaseOutputSchema = z
     materialName: z.string(),
     totalQuantity: z.string(),
     totalPrice: z.string(),
-    date: z.string(),
+    date: dateOnlyStringSchema,
   })
   .strict();
 

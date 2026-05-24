@@ -169,6 +169,16 @@ function materialNameCategoryKey(
   return `${identity.name}\u0000${identity.category}`;
 }
 
+function optionalMaterialId(value: unknown) {
+  if (typeof value !== 'object' || value === null || !('materialId' in value)) {
+    return undefined;
+  }
+
+  const materialId = value.materialId;
+
+  return typeof materialId === 'string' ? materialId : undefined;
+}
+
 export function extractClientRequestId(input: unknown) {
   if (
     input &&
@@ -200,8 +210,10 @@ function throwDuplicateMaterial(
 
 function assertNoSameBatchDuplicates(
   input: CommitImportValues,
+  materials: Array<MaterialRecord>,
   clientRequestId: string | undefined,
 ) {
+  const { byId, byIdentity } = indexMaterials(materials);
   const existingById = new Map<string, number>();
   const newByIdentity = new Map<string, number>();
 
@@ -213,12 +225,40 @@ function assertNoSameBatchDuplicates(
         throwDuplicateMaterial(lineIndex, previousLineIndex, clientRequestId);
       }
 
+      const material = byId.get(item.materialId);
+
+      if (material) {
+        const key = materialIdentityKey(material);
+        const previousNewLineIndex = newByIdentity.get(key);
+
+        if (previousNewLineIndex !== undefined) {
+          throwDuplicateMaterial(
+            lineIndex,
+            previousNewLineIndex,
+            clientRequestId,
+          );
+        }
+      }
+
       existingById.set(item.materialId, lineIndex);
 
       return;
     }
 
     const key = materialIdentityKey(item.material);
+    const materialId = byIdentity.get(key)?.id ?? optionalMaterialId(item);
+    const previousExistingLineIndex = materialId
+      ? existingById.get(materialId)
+      : undefined;
+
+    if (previousExistingLineIndex !== undefined) {
+      throwDuplicateMaterial(
+        lineIndex,
+        previousExistingLineIndex,
+        clientRequestId,
+      );
+    }
+
     const previousLineIndex = newByIdentity.get(key);
 
     if (previousLineIndex !== undefined) {
@@ -267,6 +307,13 @@ function assertCatalogCompatibility(
   clientRequestId: string | undefined,
 ) {
   const { byId, byIdentity, byNameCategory } = indexMaterials(materials);
+  const existingById = new Map<string, number>();
+
+  input.items.forEach((item, lineIndex) => {
+    if (item.kind === 'existing' && !existingById.has(item.materialId)) {
+      existingById.set(item.materialId, lineIndex);
+    }
+  });
 
   input.items.forEach((item, lineIndex) => {
     if (item.kind === 'existing') {
@@ -297,6 +344,16 @@ function assertCatalogCompatibility(
     const exactMatch = byIdentity.get(materialIdentityKey(item.material));
 
     if (exactMatch) {
+      const existingLineIndex = existingById.get(exactMatch.id);
+
+      if (existingLineIndex !== undefined) {
+        throwDuplicateMaterial(
+          Math.max(lineIndex, existingLineIndex),
+          Math.min(lineIndex, existingLineIndex),
+          clientRequestId,
+        );
+      }
+
       throw importError(
         {
           code: 'material_conflict',
@@ -477,7 +534,7 @@ export async function commitImportWithDependencies(
       const materials = await loadCatalog(db);
 
       logCommitImportCall(userId, parsed.data, materials, deps.logger);
-      assertNoSameBatchDuplicates(parsed.data, clientRequestId);
+      assertNoSameBatchDuplicates(parsed.data, materials, clientRequestId);
       assertCatalogCompatibility(parsed.data, materials, clientRequestId);
 
       const createdMaterialIds: string[] = [];

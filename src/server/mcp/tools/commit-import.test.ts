@@ -55,27 +55,29 @@ describe('leland_commit_import tool', () => {
       .spyOn(console, 'error')
       .mockImplementation(() => undefined);
 
-    const result = await callCommitImport(
-      { clientRequestId: 'req-2', date: '2026-05-15', items: [] },
-      'user-1',
-      async () => {
-        throw new Error('Prisma stack should not leak');
-      },
-    );
+    try {
+      const result = await callCommitImport(
+        { clientRequestId: 'req-2', date: '2026-05-15', items: [] },
+        'user-1',
+        async () => {
+          throw new Error('Prisma stack should not leak');
+        },
+      );
 
-    expect(result.isError).toBe(true);
-    expect(result.structuredContent).toEqual({
-      code: 'internal_error',
-      message: 'Internal error while committing Import.',
-      clientRequestId: 'req-2',
-    });
-    expect(JSON.stringify(result)).not.toContain('Prisma stack');
-    expect(consoleError).toHaveBeenCalledWith(
-      `${COMMIT_IMPORT_TOOL_NAME} failed`,
-      expect.any(Error),
-    );
-
-    consoleError.mockRestore();
+      expect(result.isError).toBe(true);
+      expect(result.structuredContent).toEqual({
+        code: 'internal_error',
+        message: 'Internal error while committing Import.',
+        clientRequestId: 'req-2',
+      });
+      expect(JSON.stringify(result)).not.toContain('Prisma stack');
+      expect(consoleError).toHaveBeenCalledWith(
+        `${COMMIT_IMPORT_TOOL_NAME} failed`,
+        expect.any(Error),
+      );
+    } finally {
+      consoleError.mockRestore();
+    }
   });
 
   it('registers the destructive non-idempotent tool contract', () => {

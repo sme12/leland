@@ -43,6 +43,14 @@ const listMaterialOutputSchema = z
   })
   .strict();
 
+const listMaterialRecordSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  category: materialCategorySchema,
+  unitOfMeasure: unitOfMeasureSchema,
+  isArchived: z.boolean(),
+});
+
 export const listMaterialsOutputSchema = z
   .object({
     materials: z.array(listMaterialOutputSchema),
@@ -69,8 +77,8 @@ type BusinessError = {
 type ListMaterialRecord = {
   id: string;
   name: string;
-  category: string;
-  unitOfMeasure: string;
+  category: ListMaterial['category'];
+  unitOfMeasure: ListMaterial['unitOfMeasure'];
   isArchived: boolean;
 };
 
@@ -150,10 +158,14 @@ function toListMaterial(material: ListMaterialRecord): ListMaterial {
   return {
     id: material.id,
     name: material.name,
-    category: material.category as ListMaterial['category'],
-    unitOfMeasure: material.unitOfMeasure as ListMaterial['unitOfMeasure'],
+    category: material.category,
+    unitOfMeasure: material.unitOfMeasure,
     isArchived: material.isArchived,
   };
+}
+
+function validateListMaterialRecord(record: unknown): ListMaterialRecord {
+  return listMaterialRecordSchema.parse(record);
 }
 
 export async function callListMaterials(
@@ -198,7 +210,9 @@ export async function listMaterialsWithDb(
     take: CATALOG_LIMIT + 1,
   });
 
-  return materials.map(toListMaterial);
+  return materials.map((material) =>
+    toListMaterial(validateListMaterialRecord(material)),
+  );
 }
 
 export function registerListMaterialsTool(server: McpServer, userId: string) {
