@@ -2,6 +2,7 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { WebStandardStreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js';
 
 import { authenticateMcpRequest, unauthorizedMcpResponse } from './auth';
+import { registerCommitImportTool } from './tools/commit-import';
 import { registerListMaterialsTool } from './tools/list-materials';
 import { registerListPurchasesTool } from './tools/list-purchases';
 
@@ -16,6 +17,7 @@ function createLelandMcpServer(userId: string) {
 
   registerListMaterialsTool(server, userId);
   registerListPurchasesTool(server, userId);
+  registerCommitImportTool(server, userId);
 
   return server;
 }
