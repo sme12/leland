@@ -11,6 +11,7 @@ import type { PurchaseDto } from '#/server/purchases';
 import { listPurchases } from '#/server/purchases';
 import { MATERIAL_CATEGORIES } from '#/shared/enums';
 import { formatEuro, formatQuantity } from '#/shared/purchase-format';
+import { testIds } from '#/testing/test-ids';
 import { purchaseKeys } from './purchase-queries';
 
 export function PurchasesList() {
@@ -40,6 +41,7 @@ export function PurchasesList() {
         <Link
           to="/purchases/new"
           search={{ materialId: undefined }}
+          data-testid={testIds.purchasesList.addLink}
           className="inline-flex h-10 items-center gap-2 rounded-md bg-foreground px-3 text-sm font-semibold text-background outline-none hover:opacity-90 focus-visible:ring-2 focus-visible:ring-ring"
         >
           <Plus aria-hidden="true" className="size-4" />
@@ -48,6 +50,7 @@ export function PurchasesList() {
       </div>
 
       <section
+        data-testid={testIds.purchasesList.root}
         data-purchases-list
         data-loaded={query.isPending ? 'false' : 'true'}
         className="mt-6 overflow-hidden rounded-md border border-border bg-surface"
@@ -82,7 +85,11 @@ export function PurchasesList() {
                 </div>
                 <ul className="divide-y divide-border">
                   {group.purchases.map((purchase) => (
-                    <li key={purchase.id} data-purchase-id={purchase.id}>
+                    <li
+                      key={purchase.id}
+                      data-testid={testIds.purchasesList.row}
+                      data-purchase-id={purchase.id}
+                    >
                       <Link
                         to="/purchases/$purchaseId"
                         params={{ purchaseId: purchase.id }}

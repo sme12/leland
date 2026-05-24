@@ -11,15 +11,19 @@ import {
   Plus,
   RotateCcw,
 } from 'lucide-react';
+import Decimal from 'decimal.js';
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import type { MaterialDto } from '#/server/materials';
 import type { MaterialCategory } from '#/shared/enums';
 import type { MaterialStatus } from './material-queries';
+import { invalidateVisitMaterialQueries } from '#/features/visits/visit-query-invalidation';
 import { listMaterials, setMaterialArchived } from '#/server/materials';
 import { MATERIAL_CATEGORIES } from '#/shared/enums';
-import { materialKeys } from './material-queries';
+import { formatQuantity } from '#/shared/purchase-format';
+import { testIds } from '#/testing/test-ids';
+import { invalidateMaterialQueries, materialKeys } from './material-queries';
 
 export function MaterialsList() {
   const { t, i18n } = useTranslation();
@@ -62,9 +66,10 @@ export function MaterialsList() {
     mutationFn: (input: { id: string; isArchived: boolean }) =>
       setArchivedFn({ data: input }),
     onSuccess: async () => {
-      await queryClient.invalidateQueries({
-        queryKey: materialKeys.root,
-      });
+      await Promise.all([
+        invalidateMaterialQueries(queryClient),
+        invalidateVisitMaterialQueries({ queryClient, userId: userKey }),
+      ]);
     },
   });
 
@@ -105,6 +110,7 @@ export function MaterialsList() {
         </div>
         <Link
           to="/materials/new"
+          data-testid={testIds.materialsList.addLink}
           className="inline-flex h-10 items-center gap-2 rounded-md bg-foreground px-3 text-sm font-semibold text-background outline-none hover:opacity-90 focus-visible:ring-2 focus-visible:ring-ring"
         >
           <Plus aria-hidden="true" className="size-4" />
@@ -121,6 +127,11 @@ export function MaterialsList() {
           <button
             key={item}
             type="button"
+            data-testid={
+              item === 'active'
+                ? testIds.materialsList.activeButton
+                : testIds.materialsList.archivedButton
+            }
             aria-pressed={status === item}
             onClick={() => setStatus(item)}
             className="h-9 rounded px-4 text-sm font-medium transition aria-pressed:bg-foreground aria-pressed:text-background"
@@ -131,6 +142,7 @@ export function MaterialsList() {
       </div>
 
       <section
+        data-testid={testIds.materialsList.root}
         data-materials-list
         data-loaded={query.isPending ? 'false' : 'true'}
         className="mt-5 overflow-hidden rounded-md border border-border bg-surface"
@@ -157,6 +169,8 @@ export function MaterialsList() {
                 >
                   <button
                     type="button"
+                    data-testid={testIds.materialsList.categoryToggle}
+                    data-material-category={group.category}
                     aria-expanded={isOpen}
                     onClick={() => toggleCategory(group.category)}
                     className="flex w-full items-center justify-between gap-3 bg-muted/40 px-4 py-3 text-left outline-none hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring"
@@ -180,65 +194,121 @@ export function MaterialsList() {
 
                   {isOpen ? (
                     <ul className="divide-y divide-border">
-                      {group.materials.map((material) => (
-                        <li
-                          key={material.id}
-                          data-material-id={material.id}
-                          className="flex items-start justify-between gap-3 p-4"
-                        >
-                          <div className="min-w-0">
-                            <p className="truncate font-medium">
-                              {material.name}
-                            </p>
-                            <p className="mt-1 inline-flex items-center gap-2 text-sm text-muted-foreground">
-                              <PackagePlus
-                                aria-hidden="true"
-                                className="size-4"
-                              />
-                              {t(`material.uom.${material.unitOfMeasure}`)}
-                            </p>
-                          </div>
-                          <div className="flex shrink-0 items-center gap-2">
-                            {!archived ? (
-                              <Link
-                                to="/materials/$materialId/edit"
-                                params={{ materialId: material.id }}
-                                aria-label={t('material.editNamed', {
-                                  name: material.name,
-                                })}
-                                className="inline-flex size-10 items-center justify-center rounded-md border border-border hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring"
-                              >
-                                <Pencil aria-hidden="true" className="size-4" />
-                              </Link>
-                            ) : null}
-                            <button
-                              type="button"
-                              aria-label={t(
-                                archived
-                                  ? 'material.restoreNamed'
-                                  : 'material.archiveNamed',
-                                { name: material.name },
-                              )}
-                              className="inline-flex size-10 items-center justify-center rounded-md border border-border hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring"
-                              onClick={() =>
-                                confirmArchive(material, !archived)
+                      {group.materials.map((material) => {
+                        const unitLabel = t(
+                          `material.uom.${material.unitOfMeasure}`,
+                        );
+                        const remaining = formatQuantity(
+                          material.stock.remaining,
+                          material.unitOfMeasure,
+                          i18n.language,
+                          unitLabel,
+                        );
+                        const purchased = formatQuantity(
+                          material.stock.purchased,
+                          material.unitOfMeasure,
+                          i18n.language,
+                          unitLabel,
+                        );
+                        const used = formatQuantity(
+                          material.stock.used,
+                          material.unitOfMeasure,
+                          i18n.language,
+                          unitLabel,
+                        );
+                        const isNegativeStock = new Decimal(
+                          material.stock.remaining,
+                        ).lt(0);
+
+                        return (
+                          <li
+                            key={material.id}
+                            data-testid={testIds.materialsList.row}
+                            data-material-id={material.id}
+                            className="grid gap-3 p-4 sm:grid-cols-[minmax(0,1fr)_minmax(12rem,auto)_auto] sm:items-center"
+                          >
+                            <div className="min-w-0">
+                              <p className="truncate font-medium">
+                                {material.name}
+                              </p>
+                              <p className="mt-1 inline-flex items-center gap-2 text-sm text-muted-foreground">
+                                <PackagePlus
+                                  aria-hidden="true"
+                                  className="size-4"
+                                />
+                                {unitLabel}
+                              </p>
+                            </div>
+                            <div
+                              data-testid={testIds.materialsList.stockSummary}
+                              data-stock-status={
+                                isNegativeStock ? 'negative' : 'ok'
                               }
+                              className="min-w-0 sm:text-right"
                             >
-                              {archived ? (
-                                <RotateCcw
-                                  aria-hidden="true"
-                                  className="size-4"
-                                />
-                              ) : (
-                                <Archive
-                                  aria-hidden="true"
-                                  className="size-4"
-                                />
-                              )}
-                            </button>
-                          </div>
-                        </li>
-                      ))}
+                              <p
+                                className={
+                                  isNegativeStock
+                                    ? 'font-semibold text-danger'
+                                    : 'font-semibold'
+                                }
+                              >
+                                {t('material.stock.remaining', {
+                                  value: remaining,
+                                })}
+                              </p>
+                              <p className="mt-1 text-sm text-muted-foreground">
+                                {t('material.stock.breakdown', {
+                                  purchased,
+                                  used,
+                                })}
+                              </p>
+                            </div>
+                            <div className="flex shrink-0 items-center gap-2 sm:justify-end">
+                              {!archived ? (
+                                <Link
+                                  to="/materials/$materialId/edit"
+                                  params={{ materialId: material.id }}
+                                  aria-label={t('material.editNamed', {
+                                    name: material.name,
+                                  })}
+                                  className="inline-flex size-10 items-center justify-center rounded-md border border-border hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring"
+                                >
+                                  <Pencil
+                                    aria-hidden="true"
+                                    className="size-4"
+                                  />
+                                </Link>
+                              ) : null}
+                              <button
+                                type="button"
+                                aria-label={t(
+                                  archived
+                                    ? 'material.restoreNamed'
+                                    : 'material.archiveNamed',
+                                  { name: material.name },
+                                )}
+                                className="inline-flex size-10 items-center justify-center rounded-md border border-border hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring"
+                                onClick={() =>
+                                  confirmArchive(material, !archived)
+                                }
+                              >
+                                {archived ? (
+                                  <RotateCcw
+                                    aria-hidden="true"
+                                    className="size-4"
+                                  />
+                                ) : (
+                                  <Archive
+                                    aria-hidden="true"
+                                    className="size-4"
+                                  />
+                                )}
+                              </button>
+                            </div>
+                          </li>
+                        );
+                      })}
                     </ul>
                   ) : null}
                 </section>

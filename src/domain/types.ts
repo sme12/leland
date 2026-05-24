@@ -2,19 +2,25 @@ import type Decimal from 'decimal.js';
 
 export type DecimalInput = Decimal.Value;
 
-export type CostPurchase = {
+export type StockPurchase = {
   id?: string;
   materialId: string;
-  totalPrice: DecimalInput;
   totalQuantity: DecimalInput;
+};
+
+export type CostPurchase = StockPurchase & {
+  totalPrice: DecimalInput;
   date: Date;
   createdAt: Date;
 };
 
-export type CostLineItem = {
+export type StockLineItem = {
   id?: string;
   materialId: string;
   amount: DecimalInput;
+};
+
+export type CostLineItem = StockLineItem & {
   totalCost: DecimalInput;
 };
 
@@ -23,10 +29,6 @@ export type VisitWithItems = {
   date: Date;
   priceCharged: DecimalInput;
   lineItems: readonly CostLineItem[];
-};
-
-export type MaterialForAggregate = {
-  id: string;
 };
 
 export type PeriodRange = [Date, Date];

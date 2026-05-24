@@ -8,6 +8,11 @@ import {
   materialListQuerySchema,
   materialUpdateSchema,
 } from '#/shared/schemas/material';
+import { computeMaterialStockFields } from './material-stock';
+import type {
+  MaterialStockFields,
+  MaterialStockSource,
+} from './material-stock';
 
 export type MaterialDto = {
   id: string;
@@ -15,23 +20,36 @@ export type MaterialDto = {
   unitOfMeasure: UnitOfMeasure;
   category: MaterialCategory;
   isArchived: boolean;
+  stock: MaterialStockFields;
   createdAt: string;
   updatedAt: string;
 };
 
-function toMaterialDto(material: {
-  id: string;
-  name: string;
-  unitOfMeasure: string;
-  category: string;
-  isArchived: boolean;
-  createdAt: Date;
-  updatedAt: Date;
-}): MaterialDto {
+const materialStockInclude = {
+  purchases: { select: { materialId: true, totalQuantity: true } },
+  lineItems: { select: { materialId: true, amount: true } },
+} as const;
+
+function toMaterialDto(
+  material: {
+    id: string;
+    name: string;
+    unitOfMeasure: string;
+    category: string;
+    isArchived: boolean;
+    createdAt: Date;
+    updatedAt: Date;
+  } & Partial<MaterialStockSource>,
+): MaterialDto {
+  const stock = computeMaterialStockFields(material);
+
   return {
-    ...material,
+    id: material.id,
+    name: material.name,
+    isArchived: material.isArchived,
     unitOfMeasure: material.unitOfMeasure as UnitOfMeasure,
     category: material.category as MaterialCategory,
+    stock,
     createdAt: material.createdAt.toISOString(),
     updatedAt: material.updatedAt.toISOString(),
   };
@@ -46,6 +64,7 @@ export const listMaterials = createServerFn({ method: 'GET' })
     const db = getScopedDb(userId);
     const materials = await db.material.findMany({
       where: { isArchived: data?.archived ?? false },
+      include: materialStockInclude,
       orderBy: [{ category: 'asc' }, { name: 'asc' }, { createdAt: 'asc' }],
     });
 
@@ -61,6 +80,7 @@ export const getMaterial = createServerFn({ method: 'GET' })
     const db = getScopedDb(userId);
     const material = await db.material.findFirst({
       where: { id: data.id, isArchived: false },
+      include: materialStockInclude,
     });
 
     if (!material) {
@@ -109,6 +129,7 @@ export const updateMaterial = createServerFn({ method: 'POST' })
 
     const material = await db.material.findFirst({
       where: { id: data.id, isArchived: false },
+      include: materialStockInclude,
     });
 
     if (!material) {

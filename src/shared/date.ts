@@ -53,6 +53,10 @@ export function isFutureHelsinkiDate(value: string, now = new Date()) {
   return value > getHelsinkiDateOnly(now);
 }
 
+export function isPastHelsinkiDate(value: string, now = new Date()) {
+  return value < getHelsinkiDateOnly(now);
+}
+
 export function isValidDateOnly(value: string) {
   try {
     return formatDateOnly(parseDateOnly(value)) === value;

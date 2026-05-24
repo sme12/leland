@@ -8,7 +8,9 @@ import { useEffect, useMemo } from 'react';
 import { FormProvider, useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 
+import { preventImplicitSubmit } from '#/components/prevent-implicit-submit';
 import { customerKeys } from '#/features/customers/customer-queries';
+import { invalidateMaterialQueries } from '#/features/materials/material-queries';
 import {
   applyVisitServerError,
   createEmptyVisitFormValues,
@@ -24,6 +26,7 @@ import type { ServiceDto } from '#/server/services';
 import { listServices } from '#/server/services';
 import { getVisit, listMaterialsForPicker, updateVisit } from '#/server/visits';
 import type { VisitDto, VisitMaterialPickerDto } from '#/server/visits';
+import { testIds } from '#/testing/test-ids';
 
 export const Route = createFileRoute('/_app/visits/$visitId_/edit')({
   component: EditVisitRoute,
@@ -106,7 +109,10 @@ function EditVisitRoute() {
       });
     },
     onSuccess: async (visit) => {
-      await queryClient.invalidateQueries({ queryKey: visitKeys.root });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: visitKeys.root }),
+        invalidateMaterialQueries(queryClient),
+      ]);
       queryClient.setQueryData(visitKeys.detail(userKey, visit.id), visit);
       await navigate({ to: '/visits/$visitId', params: { visitId } });
     },
@@ -152,7 +158,10 @@ function EditVisitRoute() {
     hasFormData;
 
   return (
-    <main className="mx-auto w-full max-w-2xl px-4 py-8">
+    <main
+      data-testid={testIds.visitEdit.root}
+      className="mx-auto w-full max-w-2xl px-4 py-8"
+    >
       <Link
         to="/visits/$visitId"
         params={{ visitId }}
@@ -180,10 +189,13 @@ function EditVisitRoute() {
         ) : (
           <FormProvider {...form}>
             <form
+              data-testid={testIds.visitEdit.form}
+              onKeyDown={preventImplicitSubmit}
               onSubmit={form.handleSubmit((values) => mutation.mutate(values))}
             >
               <VisitFormBody
                 mode="edit"
+                recordType="visit"
                 customers={customers}
                 materials={materials}
                 services={services}
@@ -198,6 +210,7 @@ function EditVisitRoute() {
               ) : null}
               <button
                 type="submit"
+                data-testid={testIds.visitEdit.saveButton}
                 disabled={mutation.isPending || missingKeys.length > 0}
                 className="mt-4 inline-flex h-11 items-center gap-2 rounded-md bg-foreground px-4 text-sm font-semibold text-background outline-none transition hover:opacity-90 focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-60"
               >
@@ -214,6 +227,7 @@ function EditVisitRoute() {
 
 function toVisitFormValues(visit: VisitDto): VisitFormFields {
   return {
+    recordType: 'visit',
     id: visit.id,
     date: visit.date,
     customerId: visit.customerId,

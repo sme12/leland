@@ -4,11 +4,13 @@ import type { Resolver } from 'react-hook-form';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 
+import { preventImplicitSubmit } from '#/components/prevent-implicit-submit';
 import type {
   CustomerFormInput,
   CustomerFormValues,
 } from '#/shared/schemas/customer';
 import { customerFormSchema } from '#/shared/schemas/customer';
+import { testIds } from '#/testing/test-ids';
 
 type CustomerFormProps = {
   defaultValues?: CustomerFormInput;
@@ -36,13 +38,16 @@ export function CustomerForm({
 
   return (
     <form
+      data-testid={testIds.customerForm.root}
       className="space-y-5"
+      onKeyDown={preventImplicitSubmit}
       onSubmit={form.handleSubmit((values) => onSubmit(values))}
     >
       <label className="block">
         <span className="text-sm font-medium">{t('customer.fields.name')}</span>
         <input
           {...form.register('name')}
+          data-testid={testIds.customerForm.nameInput}
           autoComplete="name"
           disabled={!isHydrated || isSubmitting}
           className="mt-2 h-11 w-full rounded-md border border-border bg-surface px-3 outline-none focus:ring-2 focus:ring-ring disabled:opacity-60"
@@ -60,6 +65,7 @@ export function CustomerForm({
         </span>
         <textarea
           {...form.register('comment')}
+          data-testid={testIds.customerForm.commentInput}
           rows={5}
           disabled={!isHydrated || isSubmitting}
           className="mt-2 w-full resize-y rounded-md border border-border bg-surface px-3 py-2 outline-none focus:ring-2 focus:ring-ring disabled:opacity-60"
@@ -68,6 +74,7 @@ export function CustomerForm({
 
       <button
         type="submit"
+        data-testid={testIds.customerForm.submitButton}
         disabled={!isHydrated || isSubmitting}
         className="inline-flex h-11 items-center gap-2 rounded-md bg-foreground px-4 text-sm font-semibold text-background outline-none transition hover:opacity-90 focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-60"
       >

@@ -7,11 +7,15 @@ import { ArrowLeft } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { materialKeys } from '#/features/materials/material-queries';
+import {
+  invalidateMaterialQueries,
+  materialKeys,
+} from '#/features/materials/material-queries';
 import { PurchaseForm } from '#/features/purchases/purchase-form';
 import { PurchaseMaterialSelect } from '#/features/purchases/purchase-material-select';
 import type { PurchaseMaterialOption } from '#/features/purchases/purchase-material-select';
 import { purchaseKeys } from '#/features/purchases/purchase-queries';
+import { invalidateVisitMaterialQueries } from '#/features/visits/visit-query-invalidation';
 import { listMaterials } from '#/server/materials';
 import { getPurchase, updatePurchase } from '#/server/purchases';
 import type { PurchaseCreateValues } from '#/shared/schemas/purchase';
@@ -66,10 +70,18 @@ function EditPurchaseRoute() {
   const mutation = useMutation({
     mutationFn: (values: PurchaseCreateValues) =>
       updatePurchaseFn({ data: { ...values, id: purchaseId } }),
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({
-        queryKey: purchaseKeys.all(userKey),
-      });
+    onSuccess: async (purchase) => {
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: purchaseKeys.all(userKey),
+        }),
+        invalidateMaterialQueries(queryClient),
+        invalidateVisitMaterialQueries({
+          queryClient,
+          userId: userKey,
+          materialIds: [purchase.materialId, purchaseQuery.data?.materialId],
+        }),
+      ]);
       await navigate({ to: '/purchases/$purchaseId', params: { purchaseId } });
     },
     onError: (error) => {

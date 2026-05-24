@@ -123,6 +123,7 @@ export default [
       'node_modules/**',
       'prettier.config.js',
       'src/routeTree.gen.ts',
+      'test-results/**',
     ],
   },
 ];

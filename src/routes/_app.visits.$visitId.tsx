@@ -6,9 +6,11 @@ import { useServerFn } from '@tanstack/react-start';
 import { ArrowLeft, Pencil, Trash2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
+import { invalidateMaterialQueries } from '#/features/materials/material-queries';
 import { visitKeys } from '#/features/visits/visit-queries';
 import { deleteVisit, getVisit } from '#/server/visits';
 import { formatEuro, formatQuantity } from '#/shared/purchase-format';
+import { testIds } from '#/testing/test-ids';
 
 export const Route = createFileRoute('/_app/visits/$visitId')({
   component: VisitDetailRoute,
@@ -33,7 +35,10 @@ function VisitDetailRoute() {
   const deleteMutation = useMutation({
     mutationFn: () => deleteVisitFn({ data: { id: visitId } }),
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: visitKeys.root });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: visitKeys.root }),
+        invalidateMaterialQueries(queryClient),
+      ]);
       await navigate({ to: '/visits' });
     },
     onError: (error) => {
@@ -51,7 +56,10 @@ function VisitDetailRoute() {
   }
 
   return (
-    <main className="mx-auto w-full max-w-2xl px-4 py-8">
+    <main
+      data-testid={testIds.visitDetail.root}
+      className="mx-auto w-full max-w-2xl px-4 py-8"
+    >
       <Link
         to="/visits"
         className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground"
@@ -75,7 +83,10 @@ function VisitDetailRoute() {
         <>
           <div className="mt-5 flex flex-wrap items-start justify-between gap-3">
             <div>
-              <h1 className="text-3xl font-semibold tracking-normal">
+              <h1
+                data-testid={testIds.visitDetail.title}
+                className="text-3xl font-semibold tracking-normal"
+              >
                 {query.data.customer.name}
               </h1>
               <p className="mt-1 text-sm text-muted-foreground">
@@ -87,6 +98,7 @@ function VisitDetailRoute() {
               <Link
                 to="/visits/$visitId/edit"
                 params={{ visitId }}
+                data-testid={testIds.visitDetail.editLink}
                 className="inline-flex h-10 items-center gap-2 rounded-md border border-border px-3 text-sm font-semibold outline-none hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring"
               >
                 <Pencil aria-hidden="true" className="size-4" />
@@ -94,6 +106,7 @@ function VisitDetailRoute() {
               </Link>
               <button
                 type="button"
+                data-testid={testIds.visitDetail.deleteButton}
                 onClick={confirmDelete}
                 disabled={deleteMutation.isPending}
                 className="inline-flex h-10 items-center gap-2 rounded-md border border-border px-3 text-sm font-semibold text-danger outline-none hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-60"
@@ -104,7 +117,10 @@ function VisitDetailRoute() {
             </div>
           </div>
 
-          <dl className="mt-6 grid gap-3 rounded-md border border-border bg-surface p-4 sm:grid-cols-3 sm:p-6">
+          <dl
+            data-testid={testIds.visitDetail.summary}
+            className="mt-6 grid gap-3 rounded-md border border-border bg-surface p-4 sm:grid-cols-3 sm:p-6"
+          >
             <DetailItem
               label={t('visit.fields.priceCharged')}
               value={formatEuro(query.data.priceCharged, i18n.language)}
@@ -119,12 +135,18 @@ function VisitDetailRoute() {
             />
           </dl>
 
-          <section className="mt-6 overflow-hidden rounded-md border border-border bg-surface">
+          <section
+            data-testid={testIds.visitDetail.materials}
+            className="mt-6 overflow-hidden rounded-md border border-border bg-surface"
+          >
             <h2 className="bg-muted/40 px-4 py-3 text-sm font-semibold">
               {t('visit.materialsTitle')}
             </h2>
             {query.data.lineItems.length === 0 ? (
-              <p className="p-4 text-sm text-muted-foreground">
+              <p
+                data-testid={testIds.visitDetail.pureLabor}
+                className="p-4 text-sm text-muted-foreground"
+              >
                 {t('visit.pureLabor')}
               </p>
             ) : (
@@ -132,6 +154,7 @@ function VisitDetailRoute() {
                 {query.data.lineItems.map((item) => (
                   <li
                     key={item.id}
+                    data-testid={testIds.visitDetail.materialRow}
                     className="grid gap-2 p-4 sm:grid-cols-[1fr_auto]"
                   >
                     <span className="min-w-0">

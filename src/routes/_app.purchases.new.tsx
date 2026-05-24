@@ -8,15 +8,20 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { MaterialForm } from '#/features/materials/material-form';
-import { materialKeys } from '#/features/materials/material-queries';
+import {
+  invalidateMaterialQueries,
+  materialKeys,
+} from '#/features/materials/material-queries';
 import { PurchaseForm } from '#/features/purchases/purchase-form';
 import { PurchaseMaterialSelect } from '#/features/purchases/purchase-material-select';
 import { purchaseKeys } from '#/features/purchases/purchase-queries';
+import { invalidateVisitMaterialQueries } from '#/features/visits/visit-query-invalidation';
 import { createMaterial, listMaterials } from '#/server/materials';
 import type { MaterialDto } from '#/server/materials';
 import { createPurchase } from '#/server/purchases';
 import type { MaterialCreateValues } from '#/shared/schemas/material';
 import type { PurchaseCreateValues } from '#/shared/schemas/purchase';
+import { testIds } from '#/testing/test-ids';
 
 export const Route = createFileRoute('/_app/purchases/new')({
   validateSearch: (search: Record<string, unknown>) => ({
@@ -84,9 +89,10 @@ function NewPurchaseRoute() {
     mutationFn: (values: MaterialCreateValues) =>
       createMaterialFn({ data: values }),
     onSuccess: async (material) => {
-      await queryClient.invalidateQueries({
-        queryKey: materialKeys.root,
-      });
+      await Promise.all([
+        invalidateMaterialQueries(queryClient),
+        invalidateVisitMaterialQueries({ queryClient, userId: userKey }),
+      ]);
       setCreatedMaterialFallback(material);
       setSelectedMaterialId(material.id);
       setIsAddingMaterial(false);
@@ -102,10 +108,18 @@ function NewPurchaseRoute() {
   const createPurchaseMutation = useMutation({
     mutationFn: (values: PurchaseCreateValues) =>
       createPurchaseFn({ data: values }),
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({
-        queryKey: purchaseKeys.all(userKey),
-      });
+    onSuccess: async (purchase) => {
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: purchaseKeys.all(userKey),
+        }),
+        invalidateMaterialQueries(queryClient),
+        invalidateVisitMaterialQueries({
+          queryClient,
+          userId: userKey,
+          materialIds: [purchase.materialId],
+        }),
+      ]);
       await navigate({ to: '/purchases' });
     },
     onError: (error) => {
@@ -117,7 +131,10 @@ function NewPurchaseRoute() {
   });
 
   return (
-    <main className="mx-auto w-full max-w-2xl px-4 py-8">
+    <main
+      data-testid={testIds.purchaseNew.root}
+      className="mx-auto w-full max-w-2xl px-4 py-8"
+    >
       <Link
         to="/purchases"
         className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground"
@@ -129,7 +146,10 @@ function NewPurchaseRoute() {
         {t('purchase.newTitle')}
       </h1>
 
-      <section className="mt-6 space-y-4 rounded-md border border-border bg-surface p-4 sm:p-6">
+      <section
+        data-testid={testIds.purchaseNew.materialPanel}
+        className="mt-6 space-y-4 rounded-md border border-border bg-surface p-4 sm:p-6"
+      >
         {materialsQuery.isPending ? (
           <p className="text-sm text-muted-foreground">
             {t('material.loading')}
@@ -151,6 +171,7 @@ function NewPurchaseRoute() {
 
         <button
           type="button"
+          data-testid={testIds.purchaseNew.newMaterialToggle}
           disabled={!isHydrated}
           aria-expanded={isAddingMaterial}
           onClick={() => setIsAddingMaterial((current) => !current)}
@@ -161,7 +182,10 @@ function NewPurchaseRoute() {
         </button>
 
         {isAddingMaterial ? (
-          <div className="border-t border-border pt-4">
+          <div
+            data-testid={testIds.purchaseNew.inlineMaterialPanel}
+            className="border-t border-border pt-4"
+          >
             <MaterialForm
               mode="create"
               submitLabel={t('material.create')}
@@ -173,7 +197,10 @@ function NewPurchaseRoute() {
       </section>
 
       {selectedMaterial ? (
-        <section className="mt-6 rounded-md border border-border bg-surface p-4 sm:p-6">
+        <section
+          data-testid={testIds.purchaseNew.purchasePanel}
+          className="mt-6 rounded-md border border-border bg-surface p-4 sm:p-6"
+        >
           <PurchaseForm
             key={selectedMaterial.id}
             material={selectedMaterial}

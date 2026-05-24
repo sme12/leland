@@ -33,7 +33,7 @@ The full set of **Materials** belonging to one **Stylist**. Distinct from **Stoc
 _Avoid_: Inventory, library.
 
 **Stock** / **Remaining**:
-Derived running quantity per **Material**: sum of **Purchase** `totalQuantity` minus sum of **VisitLineItem** `amount`. Can be negative — that means usage was recorded before the corresponding **Purchase** was entered (a known and accepted state).
+Derived running quantity per **Material** across all recorded time: sum of **Purchase** `totalQuantity` minus sum of **VisitLineItem** `amount`. Only **Purchases** and published **VisitLineItems** affect **Stock**; there is no separate correction event. **Stock** is not tracked per individual **Purchase**. Can be negative — that means usage was recorded before the corresponding **Purchase** was entered (a known and accepted state).
 _Avoid_: Inventory, on-hand.
 
 ### Stock acquisition
@@ -60,6 +60,26 @@ _Avoid_: Treatment, procedure, appointment.
 A customer-facing event: one **Customer**, one **Service**, one date, a price charged, plus the **Materials** consumed during it (via **VisitLineItems**).
 _Avoid_: Appointment, booking, session, event.
 
+**Visit Draft**:
+A provisional estimate for a same-day or future **Visit** that is not yet work delivered.
+_Avoid_: Appointment, booking, tentative visit.
+
+**Material Estimate**:
+An estimated amount of one **Material** for one **Visit Draft**, even if that **Material** has not yet been purchased.
+_Avoid_: VisitLineItem, usage, consumption, line.
+
+**Estimated Price**:
+The amount the **Stylist** expects to charge for a **Visit Draft**.
+_Avoid_: Price charged, revenue, payment.
+
+**Publish**:
+The act of turning the current contents of a **Visit Draft** into a **Visit**.
+_Avoid_: Save, complete, finalize.
+
+**Discard**:
+The act of removing a **Visit Draft** without creating a **Visit**.
+_Avoid_: Delete, cancel, archive.
+
 **VisitLineItem**:
 The use of an `amount` of one **Material** during one **Visit**. Carries a `unitCost` derived at the time the line is locked, plus the resulting `totalCost`. Cost values, once locked, are not retroactively recomputed.
 _Avoid_: Usage, consumption, line, charge.
@@ -70,6 +90,10 @@ _Avoid_: Usage, consumption, line, charge.
 - A **Material** has many **Purchases** (stock in) and many **VisitLineItems** (stock out).
 - A **Customer** has many **Visits**. A **Visit** belongs to exactly one **Customer** and exactly one **Service**.
 - A **Visit** has many **VisitLineItems**. Each **VisitLineItem** references exactly one **Material**.
+- A **Customer** has many **Visit Drafts**. A **Visit Draft** belongs to exactly one **Customer** and exactly one **Service**.
+- A **Visit Draft** remains a draft until published, at which point it becomes a **Visit**, affects **Stock**, and its **Estimated Price** is converted to a charged price.
+- When a **Visit Draft** becomes a **Visit**, its **Material Estimates** become **VisitLineItems** with costs locked at that moment.
+- A **Visit Draft** has many **Material Estimates**. Each **Material Estimate** references exactly one **Material**.
 - A **Receipt** is _not_ a Leland entity; an **Import** translates it into many **Purchases** (and possibly some new **Materials**).
 
 ## Example dialogue
@@ -79,9 +103,14 @@ _Avoid_: Usage, consumption, line, charge.
 >
 > **Dev:** "And if the same colour appears on a receipt I imported last week?"
 > **Domain expert:** "Then it should match the existing **Material** in the **Catalog**, not create a new one. We never want two **Materials** with the same `(name, category, unit)`."
+>
+> **Dev:** "If the stylist plans next week's colouring visit and wants to estimate materials, is that a **Visit**?"
+> **Domain expert:** "No — it is a **Visit Draft** with **Material Estimates**. It only becomes a **Visit** when it is published, and only then do we create **VisitLineItems** and change **Stock**."
 
 ## Flagged ambiguities
 
 - **"User"** was overloaded between the Clerk-authenticated identity and the domain operator. Resolved: at the **domain** layer, the operator is **Stylist**. The string `userId` survives in code only as a foreign key — it identifies a Clerk subject, which always maps 1:1 to a **Stylist**.
 - **"Invoice"** vs **"Receipt"** vs **"Bill"** — colloquially mixed. Resolved: use **Receipt** (matches the Finnish _Kuitti_ on the source documents). **Receipt** is _never_ persisted.
 - **"Inventory"** was tempting for both **Catalog** and **Stock**. Resolved: they're different concepts — **Catalog** is the list of material _types_, **Stock** is the running quantity. Don't say "inventory" for either.
+- **"Draft visit"** sounded like a subtype of **Visit**. Resolved: use **Visit Draft** for the provisional estimate; it is not a **Visit** until published.
+- **"Publish"** and **"Save"** were easy to conflate. Resolved: **Publish** uses the current **Visit Draft** contents and does not require a separate **Save**.

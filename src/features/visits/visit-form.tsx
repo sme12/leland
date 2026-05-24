@@ -21,10 +21,17 @@ import {
   visitCreateSchema,
   visitUpdateSchema,
 } from '#/shared/schemas/visit';
-import { isFutureHelsinkiDate } from '#/shared/date';
+import {
+  visitDraftCreateSchema,
+  visitDraftUpdateSchema,
+} from '#/shared/schemas/visit-draft';
+import { moneyStringSchema } from '#/shared/schemas/decimal';
+import { isFutureHelsinkiDate, isPastHelsinkiDate } from '#/shared/date';
 import { formatEuro } from '#/shared/purchase-format';
+import { testIds } from '#/testing/test-ids';
 
 export type VisitFormMode = 'create' | 'edit';
+export type VisitRecordType = 'visit' | 'draft';
 
 export type VisitLineItemFormFields = {
   id?: string;
@@ -34,6 +41,7 @@ export type VisitLineItemFormFields = {
 };
 
 export type VisitFormFields = {
+  recordType: VisitRecordType;
   id?: string;
   date: string;
   customerId: string;
@@ -45,6 +53,7 @@ export type VisitFormFields = {
 
 type VisitFormBodyProps = {
   mode: VisitFormMode;
+  recordType: VisitRecordType;
   customers: Array<CustomerOption>;
   materials: Array<VisitMaterialPickerDto>;
   services: Array<ServiceDto>;
@@ -59,6 +68,7 @@ type CustomerOption = Pick<
 
 export function VisitFormBody({
   mode,
+  recordType,
   customers,
   materials,
   services,
@@ -83,22 +93,23 @@ export function VisitFormBody({
   });
   const items = useWatch({ control: form.control, name: 'items' });
   const priceSuggestion = useMemo(() => {
-    if (mode !== 'create') {
-      return null;
-    }
-
     return getVisitPriceSuggestion({
       currentPriceCharged: priceCharged,
       serviceDefaultPrice: selectedService?.defaultPrice ?? null,
       items,
     });
-  }, [items, mode, priceCharged, selectedService?.defaultPrice]);
+  }, [items, priceCharged, selectedService?.defaultPrice]);
+  const priceLabel =
+    recordType === 'draft'
+      ? t('visit.fields.estimatedPrice')
+      : t('visit.fields.priceCharged');
 
   return (
-    <div className="space-y-6 pb-28">
+    <div data-testid={testIds.visitForm.root} className="space-y-6 pb-28">
       <label className="block">
         <span className="text-sm font-medium">{t('visit.fields.date')}</span>
         <input
+          data-testid={testIds.visitForm.dateInput}
           type="date"
           {...form.register('date')}
           className="mt-2 h-11 w-full rounded-md border border-border bg-surface px-3 outline-none focus:ring-2 focus:ring-ring"
@@ -137,16 +148,25 @@ export function VisitFormBody({
         }
         onCreate={mode === 'create' ? onCreateCustomer : undefined}
         createLabel={(query) => t('visit.createCustomerCta', { name: query })}
+        testIds={{
+          trigger: testIds.visitForm.customerTrigger,
+          dialog: testIds.visitForm.customerDialog,
+          searchInput: testIds.visitForm.customerSearchInput,
+          option: testIds.visitForm.customerOption,
+          createButton: testIds.visitForm.customerCreateButton,
+        }}
+        getOptionTestValue={(customer) => customer.id}
       />
 
       <section
+        data-testid={testIds.visitForm.materialsSection}
         className={
           customerId
             ? 'space-y-3'
             : 'space-y-3 rounded-md border border-dashed border-border p-4 opacity-70'
         }
       >
-        <div className="flex items-center justify-between gap-3">
+        <div>
           <div>
             <h2 className="text-base font-semibold">
               {t('visit.materialsTitle')}
@@ -157,15 +177,6 @@ export function VisitFormBody({
               </p>
             ) : null}
           </div>
-          <button
-            type="button"
-            disabled={!customerId}
-            onClick={() => append({ materialId: '', amount: '', unitCost: '' })}
-            className="inline-flex h-10 items-center gap-2 rounded-md border border-border px-3 text-sm font-semibold outline-none hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            <Plus aria-hidden="true" className="size-4" />
-            {t('visit.addMaterial')}
-          </button>
         </div>
 
         {fields.length === 0 ? (
@@ -178,6 +189,7 @@ export function VisitFormBody({
               <VisitLineItemRow
                 key={field.id}
                 index={index}
+                recordType={recordType}
                 materials={materials}
                 disabled={!customerId}
                 onRemove={() => remove(index)}
@@ -186,6 +198,17 @@ export function VisitFormBody({
             ))}
           </div>
         )}
+
+        <button
+          type="button"
+          data-testid={testIds.visitForm.addMaterialButton}
+          disabled={!customerId}
+          onClick={() => append({ materialId: '', amount: '', unitCost: '' })}
+          className="inline-flex h-10 items-center gap-2 rounded-md border border-border px-3 text-sm font-semibold outline-none hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          <Plus aria-hidden="true" className="size-4" />
+          {t('visit.addMaterial')}
+        </button>
       </section>
 
       <PickerSheet
@@ -211,11 +234,6 @@ export function VisitFormBody({
           const isChargedDirty = Boolean(
             form.formState.dirtyFields.priceCharged,
           );
-          const nextCharged = getServicePrefillValue({
-            currentValue: form.getValues('priceCharged'),
-            defaultPrice: service.defaultPrice,
-            isDirty: isChargedDirty || mode === 'edit',
-          });
 
           form.setValue('serviceId', service.id, {
             shouldDirty: true,
@@ -223,21 +241,34 @@ export function VisitFormBody({
           });
 
           if (!isChargedDirty && mode === 'create') {
+            const nextCharged = getServicePrefillValue({
+              currentValue: form.getValues('priceCharged'),
+              defaultPrice: service.defaultPrice,
+              isDirty: false,
+            });
+
             form.setValue('priceCharged', nextCharged, {
               shouldDirty: false,
               shouldValidate: true,
             });
           }
         }}
+        testIds={{
+          trigger: testIds.visitForm.serviceTrigger,
+          dialog: testIds.visitForm.serviceDialog,
+          searchInput: testIds.visitForm.serviceSearchInput,
+          option: testIds.visitForm.serviceOption,
+        }}
+        getOptionTestValue={(service) => service.name}
       />
 
       <div>
         <label className="block">
-          <span className="text-sm font-medium">
-            {t('visit.fields.priceCharged')}
-          </span>
+          <span className="text-sm font-medium">{priceLabel}</span>
           <input
             {...form.register('priceCharged')}
+            data-testid={testIds.visitForm.priceInput}
+            data-record-type={recordType}
             inputMode="decimal"
             className="mt-2 h-11 w-full rounded-md border border-border bg-surface px-3 outline-none focus:ring-2 focus:ring-ring"
           />
@@ -252,7 +283,11 @@ export function VisitFormBody({
         </label>
 
         {priceSuggestion ? (
-          <div className="mt-2 flex flex-wrap items-center justify-between gap-2 rounded-md bg-muted/45 px-3 py-2">
+          <div
+            data-testid={testIds.visitForm.priceSuggestion}
+            data-suggested-price={priceSuggestion}
+            className="mt-2 flex flex-wrap items-center justify-between gap-2 rounded-md bg-muted/45 px-3 py-2"
+          >
             <span className="text-sm text-muted-foreground">
               {t('visit.priceSuggestion', {
                 value: formatEuro(priceSuggestion, i18n.language),
@@ -260,6 +295,7 @@ export function VisitFormBody({
             </span>
             <button
               type="button"
+              data-testid={testIds.visitForm.applyPriceSuggestionButton}
               onClick={() =>
                 form.setValue('priceCharged', priceSuggestion, {
                   shouldDirty: true,
@@ -279,6 +315,7 @@ export function VisitFormBody({
         <span className="text-sm font-medium">{t('visit.fields.note')}</span>
         <textarea
           {...form.register('note')}
+          data-testid={testIds.visitForm.noteInput}
           rows={4}
           className="mt-2 w-full resize-y rounded-md border border-border bg-surface px-3 py-2 outline-none focus:ring-2 focus-visible:ring-ring"
         />
@@ -289,12 +326,14 @@ export function VisitFormBody({
 
 function VisitLineItemRow({
   index,
+  recordType,
   materials,
   disabled,
   onRemove,
   onBuyFirst,
 }: {
   index: number;
+  recordType: VisitRecordType;
   materials: Array<VisitMaterialPickerDto>;
   disabled: boolean;
   onRemove: () => void;
@@ -353,7 +392,11 @@ function VisitLineItemRow({
   }, [form, index, unitCostQuery.data]);
 
   return (
-    <div className="rounded-md border border-border bg-surface p-3">
+    <div
+      data-testid={testIds.visitForm.lineItem}
+      data-line-index={index}
+      className="rounded-md border border-border bg-surface p-3"
+    >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           <PickerSheet
@@ -366,16 +409,31 @@ function VisitLineItemRow({
             selectedId={materialId}
             disabled={disabled}
             getOptionLabel={(material) => material.name}
-            isOptionDisabled={(material) => !material.hasPurchases}
-            renderDisabledAction={(material) => (
-              <button
-                type="button"
-                onClick={() => onBuyFirst(material.id)}
-                className="shrink-0 rounded-md border border-border px-2 py-1 text-xs font-semibold outline-none hover:bg-background focus-visible:ring-2 focus-visible:ring-ring"
-              >
-                {t('visit.buyFirst')}
-              </button>
-            )}
+            testIds={{
+              trigger: testIds.visitForm.materialTrigger,
+              dialog: testIds.visitForm.materialDialog,
+              searchInput: testIds.visitForm.materialSearchInput,
+              option: testIds.visitForm.materialOption,
+            }}
+            getOptionTestValue={(material) => material.id}
+            isOptionDisabled={(material) =>
+              recordType === 'visit' && !material.hasPurchases
+            }
+            renderDisabledAction={
+              recordType === 'visit'
+                ? (material) => (
+                    <button
+                      type="button"
+                      data-testid={testIds.visitForm.materialBuyFirstButton}
+                      data-material-id={material.id}
+                      onClick={() => onBuyFirst(material.id)}
+                      className="shrink-0 rounded-md border border-border px-2 py-1 text-xs font-semibold outline-none hover:bg-background focus-visible:ring-2 focus-visible:ring-ring"
+                    >
+                      {t('visit.buyFirst')}
+                    </button>
+                  )
+                : undefined
+            }
             renderOption={(material) => (
               <span className="block min-w-0">
                 <span className="block truncate font-medium">
@@ -400,6 +458,7 @@ function VisitLineItemRow({
         </div>
         <button
           type="button"
+          data-testid={testIds.visitForm.materialRemoveButton}
           onClick={onRemove}
           aria-label={t('visit.removeLineItem')}
           className="mt-8 inline-flex size-11 shrink-0 items-center justify-center rounded-md border border-border text-danger outline-none hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring"
@@ -412,13 +471,17 @@ function VisitLineItemRow({
         <span className="text-sm font-medium">{t('visit.fields.amount')}</span>
         <input
           {...form.register(`items.${index}.amount`)}
+          data-testid={testIds.visitForm.materialAmountInput}
           inputMode="decimal"
           disabled={disabled || !materialId}
           className="mt-2 h-11 w-full rounded-md border border-border bg-background px-3 outline-none focus:ring-2 focus:ring-ring disabled:opacity-60"
         />
       </label>
 
-      <p className="mt-2 text-sm text-muted-foreground">
+      <p
+        data-testid={testIds.visitForm.materialUnitCostCaption}
+        className="mt-2 text-sm text-muted-foreground"
+      >
         {selectedMaterial && unitCost ? (
           <>
             {t('visit.unitCostCaption', {
@@ -447,8 +510,16 @@ function VisitLineItemRow({
 }
 
 export const visitFormResolver: Resolver<VisitFormFields> = (values) => {
-  const schema = values.id ? visitUpdateSchema : visitCreateSchema;
-  const result = schema.safeParse(toVisitValidationInput(values));
+  const recordType = values.recordType;
+  const schema =
+    recordType === 'draft'
+      ? values.id
+        ? visitDraftUpdateSchema
+        : visitDraftCreateSchema
+      : values.id
+        ? visitUpdateSchema
+        : visitCreateSchema;
+  const result = schema.safeParse(toVisitValidationInput(values, recordType));
 
   if (result.success) {
     return {
@@ -461,14 +532,33 @@ export const visitFormResolver: Resolver<VisitFormFields> = (values) => {
     values: {},
     errors: Object.fromEntries(
       result.error.issues.map((issue) => [
-        issue.path.join('.'),
+        issue.path
+          .map((segment) =>
+            segment === 'estimatedPrice' ? 'priceCharged' : segment,
+          )
+          .join('.'),
         { type: issue.code, message: issue.message },
       ]),
     ),
   };
 };
 
-function toVisitValidationInput(values: VisitFormFields) {
+function toVisitValidationInput(
+  values: VisitFormFields,
+  recordType: VisitRecordType,
+) {
+  if (recordType === 'draft') {
+    return {
+      ...(values.id ? { id: values.id } : {}),
+      customerId: values.customerId,
+      serviceId: values.serviceId,
+      date: values.date,
+      estimatedPrice: values.priceCharged,
+      note: values.note,
+      items: toDraftItems(values),
+    };
+  }
+
   return {
     ...(values.id ? { id: values.id } : {}),
     customerId: values.customerId,
@@ -484,8 +574,11 @@ function toVisitValidationInput(values: VisitFormFields) {
   };
 }
 
-export function createEmptyVisitFormValues(): VisitFormFields {
+export function createEmptyVisitFormValues(
+  recordType: VisitRecordType = 'visit',
+): VisitFormFields {
   return {
+    recordType,
     date: createDefaultVisitDate(),
     customerId: '',
     serviceId: '',
@@ -515,6 +608,44 @@ export function toVisitMutationInput(values: VisitFormFields) {
   };
 }
 
+export function toVisitDraftMutationInput(values: VisitFormFields) {
+  return {
+    ...(values.id ? { id: values.id } : {}),
+    customerId: values.customerId,
+    serviceId: values.serviceId,
+    date: values.date,
+    estimatedPrice: values.priceCharged,
+    note: values.note,
+    items: toDraftItems(values),
+  };
+}
+
+export function toVisitDraftPublishMutationInput(values: VisitFormFields) {
+  return {
+    ...(values.id ? { id: values.id } : {}),
+    customerId: values.customerId,
+    serviceId: values.serviceId,
+    date: values.date,
+    estimatedPrice: values.priceCharged,
+    note: values.note,
+    items: values.items.map((item) => ({
+      ...(item.id ? { id: item.id } : {}),
+      materialId: item.materialId,
+      amount: item.amount,
+    })),
+  };
+}
+
+function toDraftItems(values: VisitFormFields) {
+  return values.items
+    .filter((item) => item.materialId && isPositiveDecimal(item.amount))
+    .map((item) => ({
+      ...(item.id ? { id: item.id } : {}),
+      materialId: item.materialId,
+      amount: item.amount,
+    }));
+}
+
 export function computeVisitPreviewCost(values: VisitFormFields) {
   return values.items.reduce((total, item) => {
     try {
@@ -531,10 +662,29 @@ export function computeVisitPreviewCost(values: VisitFormFields) {
 
 export function getVisitFormMissingKeys(values: VisitFormFields) {
   const missing: Array<string> = [];
+  const priceCharged = values.priceCharged.trim();
+  const recordType = values.recordType;
 
   if (!values.customerId) missing.push('visit.missing.customer');
   if (!values.serviceId) missing.push('visit.missing.service');
-  if (!values.priceCharged) missing.push('visit.missing.priceCharged');
+  if (!values.date) missing.push('visit.missing.date');
+
+  if (recordType === 'draft') {
+    if (priceCharged && !moneyStringSchema.safeParse(priceCharged).success) {
+      missing.push('validation.money');
+    }
+    if (values.date && isPastHelsinkiDate(values.date)) {
+      missing.push('visit.missing.datePast');
+    }
+
+    return [...new Set(missing)];
+  }
+
+  if (!priceCharged) {
+    missing.push('visit.missing.priceCharged');
+  } else if (!moneyStringSchema.safeParse(priceCharged).success) {
+    missing.push('validation.money');
+  }
   if (values.date && isFutureHelsinkiDate(values.date)) {
     missing.push('visit.missing.dateFuture');
   }
@@ -547,6 +697,22 @@ export function getVisitFormMissingKeys(values: VisitFormFields) {
   }
 
   return [...new Set(missing)];
+}
+
+export function getVisitDraftPublishMissingKeys(values: VisitFormFields) {
+  return getVisitFormMissingKeys({ ...values, recordType: 'visit' }).map(
+    (key) => {
+      if (key === 'visit.missing.priceCharged') {
+        return 'visit.missing.estimatedPriceRequired';
+      }
+
+      if (key === 'visit.missing.dateFuture') {
+        return 'visit.missing.publishDateFuture';
+      }
+
+      return key;
+    },
+  );
 }
 
 type SetFormError = (
