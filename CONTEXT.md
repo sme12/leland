@@ -47,7 +47,7 @@ An external document — PDF, photo, email — attesting to one or more **Purcha
 _Avoid_: Invoice, bill, document — and explicitly _do not_ model this as a Leland entity.
 
 **Import**:
-The act of turning a **Receipt**'s contents into one or more **Purchase** rows (creating new **Materials** inline when needed). Today: manual data entry. In v1 of MCP: agent-mediated and committed atomically via `commit_import`.
+The act of turning a **Receipt**'s contents into one or more **Purchase** rows (creating new **Materials** inline when needed).
 _Avoid_: Upload, sync, ingest.
 
 ### Work delivered
@@ -102,7 +102,7 @@ _Avoid_: Usage, consumption, line, charge.
 > **Domain expert:** "Five — one **Purchase** per distinct **Material**. The Kuitti itself we don't store. If they bought six tubes of the same colour, that's still one **Purchase** with `totalQuantity = 6 × tube size`."
 >
 > **Dev:** "And if the same colour appears on a receipt I imported last week?"
-> **Domain expert:** "Then it should match the existing **Material** in the **Catalog**, not create a new one. We never want two **Materials** with the same `(name, category, unit)`."
+> **Domain expert:** "Then it should match the existing **Material** in the **Catalog**, not create a new one. We never want two **Materials** with the same `(name, category, unitOfMeasure)`."
 >
 > **Dev:** "If the stylist plans next week's colouring visit and wants to estimate materials, is that a **Visit**?"
 > **Domain expert:** "No — it is a **Visit Draft** with **Material Estimates**. It only becomes a **Visit** when it is published, and only then do we create **VisitLineItems** and change **Stock**."
