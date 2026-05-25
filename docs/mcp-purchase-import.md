@@ -4,7 +4,7 @@ This is the living reference for Leland's remote MCP server.
 
 ## Status
 
-The v1 MCP server, OAuth metadata routes, and three purchase-import tools are
+The v1 MCP server, OAuth metadata routes, and four purchase tools are
 implemented.
 
 Implemented:
@@ -13,11 +13,12 @@ Implemented:
 - `/mcp` is mounted in the TanStack Start app and uses stateless Streamable
   HTTP JSON responses.
 - OAuth discovery metadata is exposed at the required `.well-known` routes.
-- `leland_list_materials`, `leland_list_purchases`, and
-  `leland_commit_import` are registered with schemas, annotations, and
+- `leland_list_materials`, `leland_list_purchases`, `leland_commit_import`,
+  and `leland_correct_purchase` are registered with schemas, annotations, and
   structured outputs.
 - `commitImport` performs the whole write in one Prisma transaction.
-- Unit coverage exists for the import helper and MCP tool handlers.
+- `correctPurchase` performs a compare-and-replace update for one Purchase.
+- Unit coverage exists for the import/correction helpers and MCP tool handlers.
 
 Pending:
 
@@ -37,6 +38,8 @@ MCP server only exposes structured Leland-domain data:
 - bounded Purchase history for duplicate detection
 - one atomic commit tool that creates new Materials and Purchases from a
   confirmed import payload
+- one guarded correction tool that updates a single existing Purchase after
+  explicit confirmation
 
 The server does not do OCR, PDF parsing, server-side fuzzy matching, currency
 conversion, or Receipt persistence.
@@ -46,8 +49,9 @@ conversion, or Receipt persistence.
 - **Remote server inside Leland.** The MCP server ships with the existing
   TanStack Start app on Vercel instead of as a separate service.
 - **Domain-only boundary.** The host LLM reads Receipt PDFs/photos and sends
-  structured data. Leland exposes Catalog, Purchase history, and commit tools
-  only. Do not add a `parse_receipt(file)` tool to this MCP.
+  structured data. Leland exposes Catalog, Purchase history, import commit, and
+  Purchase correction tools only. Do not add a `parse_receipt(file)` tool to
+  this MCP.
 - **Clerk as OAuth provider.** Clerk OAuth Applications with Dynamic Client
   Registration provide MCP-compatible OAuth. Leland validates Clerk-issued
   tokens and does not host its own OAuth authorize/token endpoints.
@@ -62,12 +66,32 @@ conversion, or Receipt persistence.
 - **One Receipt, many Purchases.** A Receipt import creates one Purchase per
   distinct Material line. There is no persisted Receipt entity, vendor record,
   Receipt total, VAT summary, or supplier ledger in v1.
-- **Atomic write surface.** Reads are granular, but writes go through
+- **Atomic import write surface.** Import creation goes through
   `leland_commit_import` only. New Materials and their Purchases land together
   or not at all.
-- **No idempotency ledger.** `clientRequestId` is trace-only. True retry-safe
-  idempotency would require a persisted Import/Receipt ledger, which v1 does
-  not add.
+- **One Purchase per correction.** Corrections update exactly one existing
+  Purchase at a time. The host may propose several corrections after comparing a
+  Receipt with existing Purchases, but each corrected Purchase is confirmed and
+  written as its own operation.
+- **Compare-and-replace corrections.** A Purchase correction includes the
+  current values the host believes it is replacing and the final replacement
+  values. The server rejects stale corrections instead of blindly overwriting a
+  Purchase that has changed since it was listed. Because the live Purchase
+  matches `replacement` after a successful correction, retrying the same
+  payload returns `stale_purchase`; the host must reload before retrying. The
+  `leland_correct_purchase` tool is therefore advertised with
+  `idempotentHint: false`.
+- **Duplicate-shaped corrections are allowed.** A correction may make one
+  Purchase match another Purchase on `(materialId, totalQuantity, totalPrice,
+  date)`. The host should warn the Stylist, but duplicates remain possible
+  because real Receipts can produce identical Purchase rows.
+- **No MCP deletion in the correction slice.** `leland_correct_purchase` fixes
+  wrong values on one existing Purchase. It does not delete extra Purchases; a
+  remote delete tool would need its own guarded design.
+- **No import idempotency ledger.** `clientRequestId` is trace-only.
+  `leland_commit_import` does not deduplicate writes. `leland_correct_purchase`
+  relies on its `expected` compare-and-replace guard rather than a persisted
+  Receipt/Import ledger.
 - **Archived Materials remain valid.** Archived Materials can be used for
   `kind: "existing"` imports and are not restored automatically. A `kind: "new"`
   line that conflicts with an active or archived Material is rejected.
@@ -150,6 +174,30 @@ For unmatched Materials, the host should strip size suffixes from names, infer
 categories to `other`. These guesses must be visible and editable in the
 Stylist confirmation summary.
 
+## Correction workflow
+
+Use correction when an existing Purchase does not match the original Receipt or
+other real-world source, such as a manually entered VAT-exclusive price that
+should have been VAT-inclusive.
+
+1. Call `leland_list_purchases` for the Receipt date or a narrow date range and
+   identify the existing Purchase by `id`.
+2. If the Material may be wrong, call
+   `leland_list_materials({ includeArchived: true })`; active and archived
+   Materials are valid correction targets.
+3. Compare the Receipt with the existing Purchase values and prepare a complete
+   before/after summary for exactly one Purchase.
+4. Warn the Stylist if the replacement would look duplicate-shaped, but do not
+   treat that as a server-side blocker.
+5. After explicit confirmation, call `leland_correct_purchase` with an
+   `expected` block copied from the listed Purchase and a `replacement` block
+   containing the complete corrected final state.
+
+If `leland_correct_purchase` returns `stale_purchase`, compare the returned
+`currentPurchase` with the intended replacement. If it already equals the
+replacement, the correction likely landed earlier; otherwise reload and ask the
+Stylist to confirm the new before/after state.
+
 ## Tool surface
 
 | Tool | Type | Purpose |
@@ -157,6 +205,7 @@ Stylist confirmation summary.
 | `leland_list_materials` | read-only, idempotent | Returns `{ materials }` ordered by category, name, and creation time. Defaults to active Materials only; during imports pass `includeArchived: true`. Capped at 500 Materials and returns `catalog_too_large` above that. |
 | `leland_list_purchases` | read-only, idempotent | Returns `{ purchases }` for either one `date` or a `from`/`to` range capped at 31 inclusive days. Quantities, prices, and dates are strings. |
 | `leland_commit_import` | destructive, not idempotent | Atomically creates new Materials and Purchases in one transaction. Returns `{ createdMaterialIds, createdPurchaseIds }` on success. |
+| `leland_correct_purchase` | destructive, not retry-safe (compare-and-replace) | Corrects one existing Purchase by replacing its final `materialId`, `totalQuantity`, `totalPrice`, and `date` values after explicit Stylist confirmation. The target Material must already exist, active or archived. After a successful correction, retrying the same payload returns `stale_purchase`; reload the Purchase before retrying. |
 
 ### `leland_list_materials`
 
@@ -190,8 +239,9 @@ Output:
 
 Behavior:
 
-- Use `includeArchived: true` during imports so archived Catalog matches are
-  visible before creating new Materials.
+- Use `includeArchived: true` during imports and Material corrections so
+  archived Catalog matches are visible before creating new Materials or choosing
+  a replacement Material.
 - Results are scoped to the calling Stylist.
 - Results are ordered by category, name, and creation time.
 - More than 500 Materials returns `isError: true` with
@@ -226,8 +276,8 @@ Output:
 
 Behavior:
 
-- For duplicate detection, use the Receipt invoice/issue date (`Laskun pvm`),
-  not delivery date or payment date.
+- For duplicate detection and correction lookup, use the Receipt invoice/issue
+  date (`Laskun pvm`), not delivery date or payment date.
 - Results are scoped to the calling Stylist.
 - Results are ordered by date descending, then creation time descending.
 - Purchases for archived Materials are returned with the same row shape.
@@ -317,6 +367,86 @@ Logging:
 - Unknown internal exceptions are logged server-side; MCP responses stay generic
   and do not expose Prisma details or stack traces.
 
+### `leland_correct_purchase`
+
+`leland_correct_purchase` accepts one `purchaseId`, one `expected` block, and
+one `replacement` block. Both value blocks carry the full Purchase state:
+
+```json
+{
+  "clientRequestId": "3a9e1d45-333d-45a6-9f65-30d2247c36e7",
+  "purchaseId": "cm_purchase_123",
+  "expected": {
+    "materialId": "cm_material_123",
+    "totalQuantity": "360",
+    "totalPrice": "60.00",
+    "date": "2026-05-15"
+  },
+  "replacement": {
+    "materialId": "cm_material_123",
+    "totalQuantity": "360",
+    "totalPrice": "74.40",
+    "date": "2026-05-15"
+  }
+}
+```
+
+Output:
+
+```ts
+{
+  purchase: {
+    id: string;
+    materialId: string;
+    materialName: string;
+    totalQuantity: string;
+    totalPrice: string;
+    date: string;
+  };
+  changed: boolean;
+}
+```
+
+Payload rules:
+
+- `purchaseId` must be an existing Purchase belonging to the Stylist.
+- `expected` must match the live Purchase on `materialId`, `totalQuantity`,
+  `totalPrice`, and `date`; otherwise the tool returns `stale_purchase`.
+- `replacement` is the complete corrected final state, not a sparse patch.
+- `replacement.materialId` must reference an existing active or archived
+  Material belonging to the Stylist. This tool does not create Materials.
+- `replacement.totalQuantity` and `replacement.totalPrice` are decimal strings,
+  never JSON numbers.
+- `replacement.totalQuantity` is positive with up to two decimals.
+- If the replacement Material has `unitOfMeasure: "piece"`,
+  `replacement.totalQuantity` must be an integer string.
+- `replacement.totalPrice` is VAT-inclusive and in the Stylist's local
+  currency.
+- `replacement.date` is the Receipt invoice/issue date in `YYYY-MM-DD`.
+- If the live Purchase already equals both `expected` and `replacement`, the
+  tool returns `changed: false` without writing.
+- Duplicate-shaped replacements are allowed after Stylist confirmation.
+- This tool does not create missing Purchases or delete extra Purchases.
+
+Business errors return MCP `isError: true` responses with JSON text and
+structured content. `leland_correct_purchase` can return:
+
+- `validation_failed`
+- `purchase_not_found`
+- `material_not_found`
+- `stale_purchase`
+- `internal_error`
+
+`stale_purchase` includes `currentPurchase` with the same Purchase row shape as
+the success output. Unknown internal exceptions are logged server-side; MCP
+responses stay generic and do not expose Prisma details or stack traces.
+
+Logging:
+
+- Every `leland_correct_purchase` call logs `userId`, `clientRequestId`,
+  `purchaseId`, and `replacementMaterialId`.
+- Do not log `totalQuantity` or `totalPrice`.
+
 ## Development map
 
 - MCP server entry and transport:
@@ -326,20 +456,26 @@ Logging:
 - Tool implementations:
   [src/server/mcp/tools/list-materials.ts](../src/server/mcp/tools/list-materials.ts),
   [src/server/mcp/tools/list-purchases.ts](../src/server/mcp/tools/list-purchases.ts),
-  [src/server/mcp/tools/commit-import.ts](../src/server/mcp/tools/commit-import.ts)
+  [src/server/mcp/tools/commit-import.ts](../src/server/mcp/tools/commit-import.ts),
+  [src/server/mcp/tools/correct-purchase.ts](../src/server/mcp/tools/correct-purchase.ts)
 - Atomic import helper:
   [src/server/imports.ts](../src/server/imports.ts)
-- Shared commit payload schemas:
-  [src/shared/schemas/import.ts](../src/shared/schemas/import.ts)
+- Guarded correction helper:
+  [src/server/purchase-corrections.ts](../src/server/purchase-corrections.ts)
+- Shared payload schemas:
+  [src/shared/schemas/import.ts](../src/shared/schemas/import.ts),
+  [src/shared/schemas/purchase-correction.ts](../src/shared/schemas/purchase-correction.ts)
 - Routes:
   [src/routes/mcp.ts](../src/routes/mcp.ts),
   [src/routes/[.]well-known.oauth-protected-resource.mcp.ts](../src/routes/[.]well-known.oauth-protected-resource.mcp.ts),
   [src/routes/[.]well-known.oauth-authorization-server.ts](../src/routes/[.]well-known.oauth-authorization-server.ts)
 - Unit tests:
   [src/server/imports.test.ts](../src/server/imports.test.ts),
+  [src/server/purchase-corrections.test.ts](../src/server/purchase-corrections.test.ts),
   [src/server/mcp/tools/list-materials.test.ts](../src/server/mcp/tools/list-materials.test.ts),
   [src/server/mcp/tools/list-purchases.test.ts](../src/server/mcp/tools/list-purchases.test.ts),
-  [src/server/mcp/tools/commit-import.test.ts](../src/server/mcp/tools/commit-import.test.ts)
+  [src/server/mcp/tools/commit-import.test.ts](../src/server/mcp/tools/commit-import.test.ts),
+  [src/server/mcp/tools/correct-purchase.test.ts](../src/server/mcp/tools/correct-purchase.test.ts)
 
 Keep Prisma access behind [src/server/db.ts](../src/server/db.ts). MCP handlers
 must resolve a `userId` first and then use `getScopedDb(userId)` or server
@@ -351,6 +487,7 @@ The original implementation slices were:
 - MCP foundation and `leland_list_materials`.
 - `leland_list_purchases`.
 - `leland_commit_import` and the `commitImport` helper.
+- `leland_correct_purchase` and the `correctPurchase` helper.
 - Manual eval seed and read-only eval suite, still pending.
 
 ## Local smoke test
@@ -369,9 +506,12 @@ The original implementation slices were:
 7. Call `leland_commit_import` with a small confirmed payload. Verify the new
    Purchase rows in the app. Repeat with an invalid cross-Stylist or fake
    `materialId` and verify the transaction rolls back.
+8. Call `leland_correct_purchase` against one test Purchase with matching
+   `expected` values and a corrected `totalPrice`. Verify `changed: true`, then
+   repeat with stale `expected` values and verify `stale_purchase`.
 
-Run `pnpm test` for the unit-level coverage around the import helper and tool
-handlers. Run `pnpm check` before pushing.
+Run `pnpm test` for the unit-level coverage around the import/correction
+helpers and tool handlers. Run `pnpm check` before pushing.
 
 ## Manual evals
 
@@ -409,6 +549,7 @@ When changing the MCP surface:
 - preserve the domain-only boundary: no Receipt files, OCR, or PDF parsing in
   the MCP server
 - preserve atomicity for `leland_commit_import`
+- preserve the compare-and-replace guard for `leland_correct_purchase`
 - add or update focused tests for every new validation rule, output shape, or
   tool behavior
 - update the manual eval seed/questions together once the eval suite exists
@@ -418,7 +559,8 @@ When changing the MCP surface:
 - Persisted Receipt/vendor entities.
 - Server-side OCR, PDF parsing, or file upload.
 - Server-side fuzzy matching.
-- Standalone Material or Purchase CRUD tools.
+- Standalone Material CRUD or general Purchase CRUD tools.
+- Remote Purchase deletion.
 - Visit, Service, or Customer tools.
 - Multi-currency support.
 - VAT line-item persistence or per-Stylist VAT settings.

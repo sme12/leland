@@ -5,11 +5,8 @@ import { z } from 'zod/v4';
 import type { CommitImportInput } from '#/shared/schemas/import';
 import { commitImportInputSchema } from '#/shared/schemas/import';
 import type { CommitImportResult, ImportError } from '#/server/imports';
-import {
-  commitImport,
-  extractClientRequestId,
-  isImportCommitError,
-} from '#/server/imports';
+import { commitImport, isImportCommitError } from '#/server/imports';
+import { extractClientRequestId } from '#/server/mcp/error-helpers';
 
 export const COMMIT_IMPORT_TOOL_NAME = 'leland_commit_import';
 

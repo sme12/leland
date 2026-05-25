@@ -32,6 +32,10 @@ _Avoid_: Measure, unit, uom.
 The full set of **Materials** belonging to one **Stylist**. Distinct from **Stock** — the **Catalog** is the list of types, **Stock** is the running quantity.
 _Avoid_: Inventory, library.
 
+**Archived Material**:
+A **Material** hidden from normal active selection but still valid for historical **Purchases**, **VisitLineItems**, and **Purchase Corrections**.
+_Avoid_: Deleted Material, inactive product.
+
 **Stock** / **Remaining**:
 Derived running quantity per **Material** across all recorded time: sum of **Purchase** `totalQuantity` minus sum of **VisitLineItem** `amount`. Only **Purchases** and published **VisitLineItems** affect **Stock**; there is no separate correction event. **Stock** is not tracked per individual **Purchase**. Can be negative — that means usage was recorded before the corresponding **Purchase** was entered (a known and accepted state).
 _Avoid_: Inventory, on-hand.
@@ -53,6 +57,10 @@ _Avoid_: Delivery date, payment date, transaction date.
 **Import**:
 The act of turning a **Receipt**'s contents into one or more **Purchase** rows (creating new **Materials** inline when needed).
 _Avoid_: Upload, sync, ingest.
+
+**Purchase Correction**:
+The act of making an incorrectly recorded **Purchase** match the original **Receipt** or other real-world source.
+_Avoid_: Adjustment, correction event, reconciliation.
 
 ### Work delivered
 
@@ -92,6 +100,8 @@ _Avoid_: Usage, consumption, line, charge.
 
 - A **Stylist** owns many **Customers**, **Materials**, **Services**, **Purchases**, **Visits**. Nothing is shared across stylists.
 - A **Material** has many **Purchases** (stock in) and many **VisitLineItems** (stock out).
+- An **Archived Material** remains part of the **Catalog**.
+- A **Purchase Correction** concerns exactly one **Purchase**.
 - A **Customer** has many **Visits**. A **Visit** belongs to exactly one **Customer** and exactly one **Service**.
 - A **Visit** has many **VisitLineItems**. Each **VisitLineItem** references exactly one **Material**.
 - A **Customer** has many **Visit Drafts**. A **Visit Draft** belongs to exactly one **Customer** and exactly one **Service**.

@@ -8,6 +8,11 @@ import {
   positiveIntegerStringSchema,
   parseDateOnly,
 } from '#/shared/schemas/purchase';
+import {
+  extractClientRequestId,
+  humanizeIssueMessage,
+  withClientRequestId,
+} from './mcp/error-helpers';
 import { getScopedDb, prisma } from './db';
 
 const MATERIAL_IDENTITY_UNIQUE_INDEX =
@@ -130,18 +135,13 @@ export function isImportCommitError(
   return error instanceof ImportCommitError;
 }
 
-function withClientRequestId(
-  error: Omit<ImportError, 'clientRequestId'>,
-  clientRequestId: string | undefined,
-): ImportError {
-  return clientRequestId ? { ...error, clientRequestId } : error;
-}
-
 function importError(
   error: Omit<ImportError, 'clientRequestId'>,
   clientRequestId: string | undefined,
 ): ImportCommitError {
-  return new ImportCommitError(withClientRequestId(error, clientRequestId));
+  return new ImportCommitError(
+    withClientRequestId<ImportError>(error, clientRequestId),
+  );
 }
 
 function validationError(
@@ -177,19 +177,6 @@ function optionalMaterialId(value: unknown) {
   const materialId = value.materialId;
 
   return typeof materialId === 'string' ? materialId : undefined;
-}
-
-export function extractClientRequestId(input: unknown) {
-  if (
-    input &&
-    typeof input === 'object' &&
-    'clientRequestId' in input &&
-    typeof input.clientRequestId === 'string'
-  ) {
-    return input.clientRequestId;
-  }
-
-  return undefined;
 }
 
 function throwDuplicateMaterial(
@@ -517,9 +504,10 @@ export async function commitImportWithDependencies(
 
   if (!parsed.success) {
     const [firstIssue] = parsed.error.issues;
+    const fieldPath = firstIssue.path.join('.') || '(root)';
 
     throw validationError(
-      `Invalid import payload: ${firstIssue.message}`,
+      `Invalid import payload at ${fieldPath}: ${humanizeIssueMessage(firstIssue.message)}`,
       fallbackClientRequestId,
     );
   }

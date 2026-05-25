@@ -11,7 +11,7 @@ const MS_PER_DAY = 1000 * 60 * 60 * 24;
 export const LIST_PURCHASES_TOOL_NAME = 'leland_list_purchases';
 
 export const LIST_PURCHASES_TOOL_DESCRIPTION =
-  "Returns **Purchases** within a bounded date window. Primary use case: duplicate detection before `leland_commit_import` — call with `date` set to the **Receipt**'s invoice date (Finnish: _Laskun pvm_), and compare each proposed item against the returned rows on the tuple `(materialId, totalQuantity, totalPrice)`. Exact-tuple matches are likely duplicates — skip them by default and confirm with the **Stylist** before overriding. Pass exactly one of: `date` (single day) **or** `from`/`to` (range, max 31 days).";
+  "Returns **Purchases** within a bounded date window. Use it for duplicate detection before `leland_commit_import` and for loading current values before `leland_correct_purchase`. For Receipt work, call with `date` set to the **Receipt**'s invoice date (Finnish: _Laskun pvm_) unless you need a narrow range. For imports, compare each proposed item against returned rows on `(materialId, totalQuantity, totalPrice)`. For corrections, copy the listed row into the `expected` block and present a complete before/after summary. Exact-tuple matches are likely duplicates — skip them by default for imports and warn the **Stylist** before confirmed corrections. Pass exactly one of: `date` (single day) **or** `from`/`to` (range, max 31 days).";
 
 const dateOnlyStringSchema = z
   .string()

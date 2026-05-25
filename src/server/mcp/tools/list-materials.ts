@@ -13,14 +13,14 @@ const CATALOG_LIMIT = 500;
 export const LIST_MATERIALS_TOOL_NAME = 'leland_list_materials';
 
 export const LIST_MATERIALS_TOOL_DESCRIPTION =
-  'Returns the **Stylist**\'s full **Catalog** of **Materials**, used for matching **Receipt** lines before committing an **Import**. **Material** identity is exact on `(name, category, unitOfMeasure)` per **Stylist** — the server does no case-insensitive or fuzzy matching. Always call this **before** proposing `kind:"new"` items to `leland_commit_import`, with `includeArchived: true` during an **Import** so you can match against archived **Materials** before creating duplicates. Archived **Materials** stay valid for `kind:"existing"` and are returned with `isArchived: true`.';
+  'Returns the **Stylist**\'s full **Catalog** of **Materials**, used for matching **Receipt** lines before committing an **Import** or correcting a **Purchase**. **Material** identity is exact on `(name, category, unitOfMeasure)` per **Stylist** — the server does no case-insensitive or fuzzy matching. Always call this **before** proposing `kind:"new"` items to `leland_commit_import`, and call it with `includeArchived: true` during an **Import** or Material correction so you can match against archived **Materials** before creating duplicates or choosing the wrong active target. Archived **Materials** stay valid for `kind:"existing"` imports and `leland_correct_purchase` replacements, and are returned with `isArchived: true`.';
 
 const includeArchivedSchema = z
   .boolean()
   .optional()
   .default(false)
   .describe(
-    'Default false. Set to true when matching Receipt lines against the Catalog so you can find archived Materials and avoid creating duplicate entries.',
+    'Default false. Set to true when matching Receipt lines against the Catalog for Imports or Purchase corrections so you can find archived Materials.',
   );
 
 export const listMaterialsInputSchema = z
